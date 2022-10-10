@@ -27,7 +27,7 @@ object Spender {
   val message: String = "test tweet"
 
   val walletAddress: String = {
-    "9i5FPuvo3vYKCTaDQkk7vUDrvnfXHW6GpkWxSKrVFWGmBtzkQWg"
+    ""
   }
 
   val tweetId: String =
@@ -37,8 +37,9 @@ object Spender {
     * 1. tweet
     * 2. reply
     * 3. retweet
+    * 4. delete
     */
-  val txType: String = "retweet"
+  val txType: String = "delete"
 
   val client = new Client
   client.setClient()
@@ -60,6 +61,7 @@ object Spender {
             )
           case "reply"   => NFTMinter.reply(tweetId, message, walletAddress)
           case "retweet" => NFTMinter.retweet(tweetId, message, walletAddress)
+          case "delete"  => NFTMinter.delete(tweetId, walletAddress)
         }
       }
 

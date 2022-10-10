@@ -4,14 +4,18 @@
 # ~~~~
 
 # An example controller showing a sample home page
-GET     /                       controllers.HomeController.index()
-GET     /feed                   controllers.HomeController.getFeed
-POST    /tweet                  controllers.HomeController.tweet
-POST    /reply                  controllers.HomeController.reply
-POST    /retweet                controllers.HomeController.retweet
-POST    /createProfile          controllers.HomeController.createProfile
-PUT     /follow                 controllers.HomeController.follow
-DELETE  /delete/:tweetId        controllers.HomeController.deleteTweet(tweetId: String)
+GET     /                                   controllers.HomeController.index()
+GET     /feed                               controllers.HomeController.getFeed
+GET     /feed/byAddress/:walletAddress      controllers.HomeController.getAddressFeed(walletAddress: String)
+POST    /tweet                              controllers.HomeController.tweet
+POST    /reply                              controllers.HomeController.reply
+POST    /retweet                            controllers.HomeController.retweet
+DELETE  /delete/:tweetId                    controllers.HomeController.deleteTweet(tweetId: String)
+POST    /profile                            controllers.HomeController.createProfile
+DELETE  /profile                            controllers.HomeController.deleteProfile
+PUT     /profile                            controllers.HomeController.changeProfileNFT
+PUT     /follow                             controllers.HomeController.follow
+PUT     /unfollow                           controllers.HomeController.unfollow
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)

@@ -2,6 +2,7 @@ package controllers
 
 import edge.pay.ErgoPayResponse
 import errors.ExceptionThrowable
+import feed.Feed
 import io.circe.Json
 import io.circe.syntax.EncoderOps
 import mint.{Client, NFTMinter}
@@ -15,6 +16,7 @@ import play.api.mvc._
 class HomeController @Inject() (
   val client: Client,
   val NFTMinter: NFTMinter,
+  val feed: Feed,
   val controllerComponents: ControllerComponents
 ) extends BaseController
     with Circe
@@ -32,6 +34,19 @@ class HomeController @Inject() (
         val address: String = getRequestBodyAsString(request, "address")
 
         Ok(Json.fromString(address)).as("application/json")
+      } catch {
+        case e: Throwable => exception(e, logger)
+      }
+  }
+
+  def getAddressFeed(walletAddress: String): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      try {
+        val tweetJson = feed.get(Address.create(walletAddress))
+
+        Ok(Json.fromFields(List(
+          ("tweets", Json.fromValues(tweetJson))
+        ))).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -125,7 +140,59 @@ class HomeController @Inject() (
       }
   }
 
+  def deleteTweet(tweetId: String): Action[Json] = Action(circe.json) {
+    implicit request: Request[Json] =>
+      try {
+        val tweetId: String = getRequestBodyAsString(request, "tweetId")
+        val walletAddress: String =
+          getRequestBodyAsString(request, "walletAddress")
+
+        val tweetTx: Seq[(Address, ReducedTransaction)] =
+          NFTMinter.delete(
+            tweetId = tweetId,
+            address = walletAddress
+          )
+
+        val ergoPayResponse: Seq[ErgoPayResponse] = tweetTx.map(tweet =>
+          ErgoPayResponse.getResponse(
+            recipient = tweet._1,
+            reducedTx = tweet._2,
+            message = s"Tweet: burning ${tweetId}",
+            replyTo = walletAddress
+          )
+        )
+
+        Ok(ergoPayResponse.asJson).as("application/json")
+      } catch {
+        case e: Throwable => exception(e, logger)
+      }
+  }
+
   def createProfile: Action[Json] = Action(circe.json) {
+    implicit request: Request[Json] =>
+      try {
+        val address: String = getRequestBodyAsString(request, "address")
+        val nftId: String = getRequestBodyAsString(request, "nftId")
+
+        Ok(Json.fromString(address)).as("application/json")
+      } catch {
+        case e: Throwable => exception(e, logger)
+      }
+  }
+
+  def deleteProfile: Action[Json] = Action(circe.json) {
+    implicit request: Request[Json] =>
+      try {
+        val address: String = getRequestBodyAsString(request, "address")
+        val nftId: String = getRequestBodyAsString(request, "nftId")
+
+        Ok(Json.fromString(address)).as("application/json")
+      } catch {
+        case e: Throwable => exception(e, logger)
+      }
+  }
+
+  def changeProfileNFT: Action[Json] = Action(circe.json) {
     implicit request: Request[Json] =>
       try {
         val address: String = getRequestBodyAsString(request, "address")
@@ -151,10 +218,15 @@ class HomeController @Inject() (
       }
   }
 
-  def deleteTweet(tweetId: String): Action[Json] = Action(circe.json) {
+  def unfollow: Action[Json] = Action(circe.json) {
     implicit request: Request[Json] =>
       try {
-        Ok(Json.fromString(tweetId)).as("application/json")
+        val addressToUnfollow: String =
+          getRequestBodyAsString(request, "addressToUnfollow")
+        val walletAddress: String =
+          getRequestBodyAsString(request, "walletAddress")
+
+        Ok(Json.fromString(walletAddress)).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }

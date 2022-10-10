@@ -13,12 +13,13 @@ import org.ergoplatform.appkit.{
   ErgoToken,
   InputBox,
   OutBox,
-  ReducedTransaction,
+  ReducedTransaction
 }
 import txs.Tx
 
 import java.security.MessageDigest
 import javax.inject.Inject
+import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
 
 case class NFTMinter @Inject() (client: Client, tweetProtocol: TweetProtocol) {
@@ -27,7 +28,7 @@ case class NFTMinter @Inject() (client: Client, tweetProtocol: TweetProtocol) {
     message: String,
     address: String
   ): Seq[(Address, ReducedTransaction)] = {
-    val parsedAddress = Address.create(address);
+    val parsedAddress = Address.create(address)
     val mintTweet =
       tweetProtocol.mintTweet(parsedAddress, message, TweetAction.post)
 
@@ -39,7 +40,7 @@ case class NFTMinter @Inject() (client: Client, tweetProtocol: TweetProtocol) {
     message: String,
     address: String
   ): Seq[(Address, ReducedTransaction)] = {
-    val parsedAddress = Address.create(address);
+    val parsedAddress = Address.create(address)
     val mintTweet = tweetProtocol.mintTweet(
       parsedAddress,
       message,
@@ -54,7 +55,7 @@ case class NFTMinter @Inject() (client: Client, tweetProtocol: TweetProtocol) {
     message: String,
     address: String
   ): Seq[(Address, ReducedTransaction)] = {
-    val parsedAddress = Address.create(address);
+    val parsedAddress = Address.create(address)
     val mintTweet = tweetProtocol.mintTweet(
       parsedAddress,
       message,
@@ -64,12 +65,24 @@ case class NFTMinter @Inject() (client: Client, tweetProtocol: TweetProtocol) {
     mintTweet
   }
 
+  def delete(
+    tweetId: String,
+    address: String
+  ): Seq[(Address, ReducedTransaction)] = {
+    val parsedAddress = Address.create(address)
+    val deleteTweet = tweetProtocol.burnTweet(
+      parsedAddress,
+      tweetId
+    )
+
+    deleteTweet
+  }
 }
 
 class TweetProtocol @Inject() (client: Client) {
 
-  def createIssuerBoxTx(address: Address) = {
-    val unspentBox = client.getCoveringBoxesFor(address, ErgCommons.MinBoxFee)
+  def createIssuerBoxTx(address: Address): CreateIssuerBoxTx = {
+    val unspentBox = client.getCoveringBoxesFor(address, ErgCommons.MinBoxFee*2)
 
     val createIssuerBoxTx =
       new CreateIssuerBoxTx(unspentBox.getBoxes.toSeq, address)(
@@ -83,7 +96,7 @@ class TweetProtocol @Inject() (client: Client) {
     address: Address,
     message: String,
     tweetAction: (Byte, String)
-  ) = {
+  ): CreateIssuanceBoxTx = {
     val createIssuanceBoxTx =
       new CreateIssuanceBoxTx(Seq(issuerBox), address, message, tweetAction)(
         client.getContext
@@ -120,6 +133,44 @@ class TweetProtocol @Inject() (client: Client) {
 
     Seq(reducedIssuerBoxTxWithAddress, reducedIssuanceBoxTxWithAddress)
   }
+
+  def burnTweet(
+    address: Address,
+    tweetId: String
+  ): Seq[(Address, ReducedTransaction)] = {
+    val tokenList = Seq(new ErgoToken(tweetId, 1))
+    val unspentBox = client.getCoveringBoxesFor(
+      address,
+      ErgCommons.MinBoxFee * 2,
+      tokensToSpend = tokenList.asJava
+    )
+    val burnTweetTx =
+      new BurnTweetTx(Seq(unspentBox: _*), address, tokensToBurn = tokenList)(
+        client.getContext
+      )
+    Seq((address, burnTweetTx.reduceTx))
+  }
+}
+
+class BurnTweetTx(
+  override val inputBoxes: Seq[InputBox],
+  address: Address,
+  override val tokensToBurn: Seq[ErgoToken]
+)(implicit val ctx: BlockchainContext)
+    extends Tx {
+  override val changeAddress: P2PKAddress = address.asP2PK()
+
+  override def getOutBoxes: Seq[OutBox] = Seq(
+    ctx
+      .newTxBuilder()
+      .outBoxBuilder()
+      .value(ErgCommons.MinBoxFee)
+      .contract(address.toErgoContract)
+      .build()
+  )
+
+  override def getCustomOutBoxes(customData: Seq[CustomBoxData]): Seq[OutBox] =
+    ???
 }
 
 class CreateIssuerBoxTx(
