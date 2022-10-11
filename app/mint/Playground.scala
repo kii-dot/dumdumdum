@@ -1,5 +1,6 @@
 package runners.helpers
 
+import commons.ErgCommons
 import mint.{Client, NFTMinter, TweetProtocol}
 import org.ergoplatform.appkit.{
   Address,
@@ -14,6 +15,7 @@ import org.ergoplatform.appkit.{
   SignedTransaction
 }
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
+import profile.{CreateDumDumDumsTx, DumDumDumHandler}
 import tokens.SigUSD
 
 /**
@@ -23,15 +25,14 @@ import tokens.SigUSD
   * Output boxes for spending.
   */
 object Spender {
-  val name: String = "SLT Test 2"
-  val message: String = "test tweet"
+  val message: String = "First DumDumDum Tweet :D"
 
   val walletAddress: String = {
     ""
   }
 
   val tweetId: String =
-    "e853d1a8a853a781a5f2b519ea29f5a337b8b629f937864e7e7e00bf2c3a0ada"
+    "093bdedda43c2d24e10403e170f0796ae80099f43f396e6577c4f65199b6d1c4"
 
   /**
     * 1. tweet
@@ -47,32 +48,73 @@ object Spender {
   val NFTMinter =
     new NFTMinter(client = client, tweetProtocol = new TweetProtocol(client))
 
+  val DumDumDumHandler =
+    new DumDumDumHandler(client = client)
+
   def mint(
     ergoClient: ErgoClient,
     prover: ErgoProver
-  ): Seq[SignedTransaction] = {
-    val txJson: Seq[SignedTransaction] = ergoClient.execute { implicit ctx =>
-      val mintReducedTx: Seq[(Address, ReducedTransaction)] = {
-        txType match {
-          case "tweet" =>
-            NFTMinter.mintTweetTx(
-              message,
-              walletAddress
-            )
-          case "reply"   => NFTMinter.reply(tweetId, message, walletAddress)
-          case "retweet" => NFTMinter.retweet(tweetId, message, walletAddress)
-          case "delete"  => NFTMinter.delete(tweetId, walletAddress)
+  ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val mintReducedTx: Seq[(Address, ReducedTransaction)] = {
+          txType match {
+            case "tweet" =>
+              NFTMinter.mintTweetTx(
+                message,
+                walletAddress
+              )
+            case "reply"   => NFTMinter.reply(tweetId, message, walletAddress)
+            case "retweet" => NFTMinter.retweet(tweetId, message, walletAddress)
+            case "delete"  => NFTMinter.delete(tweetId, walletAddress)
+          }
         }
-      }
 
-      val signed: Seq[SignedTransaction] =
-        mintReducedTx.map(tx => prover.signReduced(tx._2, 0))
-
-      signed.map(signedTx => ctx.sendTransaction(signedTx))
-      signed
+        mintReducedTx
     }
 
-    txJson
+    reducedTxs
+  }
+
+  def mintDumDumDums(
+    ergoClient: ErgoClient,
+    prover: ErgoProver
+  ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val createDumDumDumsTx = DumDumDumHandler.mint(
+          address = Address.create(walletAddress),
+          name = "DumDumDums ProfileBox NFT",
+          description =
+            "This is the token to identify the DumDumDums Profile Box. The token, I, am the decider of fate of these puny Profile Tokens, Buahahhaha.",
+          amount = 1,
+          optionalLink =
+            "DumDumDum, I am the master token of the Profile Box Buahahaha"
+        )
+
+        createDumDumDumsTx
+    }
+
+    reducedTxs
+  }
+
+  def burnDumDumDums(
+    ergoClient: ErgoClient,
+    prover: ErgoProver
+  ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val burnDumDumDumsTx = DumDumDumHandler.burn(
+          address = Address.create(walletAddress),
+          nftId =
+            "5f02aad340ca7dff6447e6331c2ded8463ae8424dc292d1d1e8b7f0e4f0104e3",
+          amount = Long.MaxValue
+        )
+
+        burnDumDumDumsTx
+    }
+
+    reducedTxs
   }
 
   def main(args: Array[String]): Unit = {
@@ -100,8 +142,15 @@ object Spender {
         .build()
     }
 
-    val txJsons: Seq[SignedTransaction] = mint(ergoClient, prover)
+    // Tx happens Here
+    val txJsons: Seq[(Address, ReducedTransaction)] =
+      mintDumDumDums(ergoClient, prover)
+    // Tx Ends Here
 
-    txJsons.foreach(txJson => System.out.println(txJson.toJson(true)))
+    val signed =
+      txJsons.map(tx => prover.signReduced(tx._2, 0))
+
+    signed.map(signedTx => client.getContext.sendTransaction(signedTx))
+    signed.foreach(txJson => System.out.println(txJson.toJson(true)))
   }
 }

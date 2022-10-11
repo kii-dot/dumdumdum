@@ -82,7 +82,8 @@ case class NFTMinter @Inject() (client: Client, tweetProtocol: TweetProtocol) {
 class TweetProtocol @Inject() (client: Client) {
 
   def createIssuerBoxTx(address: Address): CreateIssuerBoxTx = {
-    val unspentBox = client.getCoveringBoxesFor(address, ErgCommons.MinBoxFee*2)
+    val unspentBox =
+      client.getCoveringBoxesFor(address, ErgCommons.MinBoxFee * 2)
 
     val createIssuerBoxTx =
       new CreateIssuerBoxTx(unspentBox.getBoxes.toSeq, address)(
@@ -95,10 +96,15 @@ class TweetProtocol @Inject() (client: Client) {
     issuerBox: InputBox,
     address: Address,
     message: String,
-    tweetAction: (Byte, String)
-  ): CreateIssuanceBoxTx = {
+    tweetAction: (Int, String)
+  ): CreateTweetIssuanceBoxTx = {
     val createIssuanceBoxTx =
-      new CreateIssuanceBoxTx(Seq(issuerBox), address, message, tweetAction)(
+      new CreateTweetIssuanceBoxTx(
+        Seq(issuerBox),
+        address,
+        message,
+        tweetAction
+      )(
         client.getContext
       )
 
@@ -108,7 +114,7 @@ class TweetProtocol @Inject() (client: Client) {
   def mintTweet(
     address: Address,
     message: String,
-    tweetAction: (Byte, String)
+    tweetAction: (Int, String)
   ): Seq[(Address, ReducedTransaction)] = {
     val issuerBoxTx = createIssuerBoxTx(address)
     val issuerBoxUnsignedTx = issuerBoxTx.buildTx
@@ -168,9 +174,6 @@ class BurnTweetTx(
       .contract(address.toErgoContract)
       .build()
   )
-
-  override def getCustomOutBoxes(customData: Seq[CustomBoxData]): Seq[OutBox] =
-    ???
 }
 
 class CreateIssuerBoxTx(
@@ -190,16 +193,13 @@ class CreateIssuerBoxTx(
         .registers((new Register(10L)).toErgoValue.get)
         .build()
     )
-
-  override def getCustomOutBoxes(customData: Seq[CustomBoxData]): Seq[OutBox] =
-    ???
 }
 
-class CreateIssuanceBoxTx(
+class CreateTweetIssuanceBoxTx(
   override val inputBoxes: Seq[InputBox],
   address: Address,
   message: String,
-  tweetAction: (Byte, String)
+  tweetAction: (Int, String)
 )(implicit val ctx: BlockchainContext)
     extends Tx {
   override val changeAddress: P2PKAddress = address.asP2PK()
@@ -209,16 +209,13 @@ class CreateIssuanceBoxTx(
       TweetBox(inputBoxes.head.getId, address = address, message, tweetAction)
         .getOutBox(ctx, ctx.newTxBuilder())
     )
-
-  override def getCustomOutBoxes(customData: Seq[CustomBoxData]): Seq[OutBox] =
-    ???
 }
 
 case class TweetBox(
   issuerBoxId: ErgoId,
   address: Address,
   message: String,
-  tweetAction: (Byte, String),
+  tweetAction: (Int, String),
   override val id: ErgoId = ErgoId.create(""),
   override val box: Option[Box] = Option(null),
   override val value: Long = ErgCommons.MinBoxFee
@@ -262,7 +259,7 @@ case class TweetBox(
     Option(new Register[String](getSHA256OfTweet))
 
   override def R9: Option[Register[_]] =
-    Option(new Register[(Byte, String)](tweetAction))
+    Option(new Register[(Int, String)](tweetAction))
 }
 
 object NFTType {
@@ -270,7 +267,7 @@ object NFTType {
 }
 
 object TweetAction {
-  def post: (Byte, String) = (0, "")
-  def reply(tweetId: String): (Byte, String) = (1, tweetId)
-  def retweet(tweetId: String): (Byte, String) = (2, tweetId)
+  def post: (Int, String) = (0, "")
+  def reply(tweetId: String): (Int, String) = (1, tweetId)
+  def retweet(tweetId: String): (Int, String) = (2, tweetId)
 }

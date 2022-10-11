@@ -17,11 +17,11 @@
 
     // ===== Contract Hard-Coded Constants ===== //
     // val _OwnerPK:                        Coll[Byte]
-    // val _DumDumDumToken:                 Coll[Byte]
+    // val _DumDumDumProfileToken:          Coll[Byte]
 
     // ===== Box Details ===== //
     // R4: Profile Picture (NFT Token Id) => Coll[Byte]
-    // R5: Following (WalletAddress) => AVLTree
+    // R5: Following (WalletAddress) => Coll[Coll[Byte]]
 
     // ===== Contract Conditions ===== //
     // 1. Adding/Removing Following
@@ -31,25 +31,42 @@
     val inProfileBox: Box   = INPUTS(0)
     val outProfileBox: Box  = OUTPUTS(0)
 
-    // ### Modifying Profile
+    // ====== Mutation ====== //
+    // Inputs: ProfileBox(0)
+    // Outputs: ProfileBox(0), MiningBox(1)
     if (OUTPUTS.size == 2) {
+        val dataInputBox: Box           = CONTEXT.dataInputs(0)
+
+        val isProfileBoxTokenSame: Boolean = allOf(Coll(
+            inProfileBox.tokens(0)._1 == outProfileBox.tokens(0)._1,
+            inProfileBox.tokens(0)._2 == outProfileBox.tokens(0)._2,
+            inProfileBox.tokens.size == 1,
+            outProfileBox.tokens.size == 1,
+            inProfileBox.tokens(0)._1 == _DumDumDumToken,
+        ))
+
+        val isProfileBoxValueSame: Boolean =
+            inProfileBox.value == outProfileBox.value,
+
+        val isProfileBoxAddressSame: Boolean =
+            inProfileBox.propositionBytes == outProfileBox.propositionBytes
+
         sigmaProp(allOf(
             Coll(
-                _OwnerPk,
+                _OwnerPK,
                 anyOf(
                     inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]],
-                    inProfileBox.R5[AvlTree] == outProfileBox.R5[AvlTree]
+                    inProfileBox.R5[Coll[Coll[Byte]]] == outProfileBox.R5[Coll[Coll[Byte]]]
                 ),
-                inProfileBox.tokens(0)._1 == outProfileBox.tokens(0)._1,
-                inProfileBox.tokens(0)._2 == outProfileBox.tokens(0)._2,
-                inProfileBox.tokens.size == 1,
-                outProfileBox.tokens.size == 1,
-                inProfileBox.tokens(0)._1 == _DumDumDumToken,
-                inProfileBox.value == outProfileBox.value
+                isProfileBoxTokenSame,
+                isProfileBoxValueSame,
+                isProfileBoxAddressSame
             )
         ))
     } else if (OUTPUTS.size == 1) {
-        // ### Deleting Profile Box
+        // ====== Deletion ====== //
+        // Inputs: ProfileBox(0)
+        // Outputs: MiningBox(0)
         _OwnerPK
     } else {
         sigmaProp(false)

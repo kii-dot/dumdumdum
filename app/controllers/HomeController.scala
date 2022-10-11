@@ -28,6 +28,11 @@ class HomeController @Inject() (
     implicit request: Request[AnyContent] => Ok(views.html.index())
   }
 
+  def ping: Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      Ok(Json.fromString("pong")).as("application/json")
+  }
+
   def getFeed: Action[Json] = Action(circe.json) {
     implicit request: Request[Json] =>
       try {
@@ -44,9 +49,13 @@ class HomeController @Inject() (
       try {
         val tweetJson = feed.get(Address.create(walletAddress))
 
-        Ok(Json.fromFields(List(
-          ("tweets", Json.fromValues(tweetJson))
-        ))).as("application/json")
+        Ok(
+          Json.fromFields(
+            List(
+              ("tweets", Json.fromValues(tweetJson))
+            )
+          )
+        ).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
