@@ -1,6 +1,7 @@
 package runners.helpers
 
 import commons.ErgCommons
+import config.Configs.{dumdumdumsProfileToken, serviceOwner}
 import mint.{Client, NFTMinter, TweetProtocol}
 import org.ergoplatform.appkit.{
   Address,
@@ -28,7 +29,7 @@ object Spender {
   val message: String = "First DumDumDum Tweet :D"
 
   val walletAddress: String = {
-    ""
+    serviceOwner
   }
 
   val tweetId: String =
@@ -106,9 +107,8 @@ object Spender {
       implicit ctx =>
         val burnDumDumDumsTx = DumDumDumHandler.burn(
           address = Address.create(walletAddress),
-          nftId =
-            "5f02aad340ca7dff6447e6331c2ded8463ae8424dc292d1d1e8b7f0e4f0104e3",
-          amount = Long.MaxValue
+          nftId = dumdumdumsProfileToken,
+          amount = 1000000000
         )
 
         burnDumDumDumsTx
@@ -144,7 +144,7 @@ object Spender {
 
     // Tx happens Here
     val txJsons: Seq[(Address, ReducedTransaction)] =
-      mintDumDumDums(ergoClient, prover)
+      burnDumDumDums(ergoClient, prover)
     // Tx Ends Here
 
     val signed =

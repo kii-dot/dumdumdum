@@ -14,14 +14,17 @@ object ProfileTokenDistributionBoxContract {
     ownerPk: Address
   )(implicit ctx: BlockchainContext): ProfileTokenDistributionBoxContract = {
     val constants: List[(String, Any)] = List(
-      (ProfileTokenDistributionBoxContractConstants.ownerPk, ownerPk),
+      (
+        ProfileTokenDistributionBoxContractConstants.ownerPk,
+        ownerPk.getPublicKey
+      ),
       (
         ProfileTokenDistributionBoxContractConstants.dumdumdumNFT,
-        dumdumdumsNFT
+        dumdumdumsNFT.getBytes()
       ),
       (
         ProfileTokenDistributionBoxContractConstants.dumdumdumProfileToken,
-        dumdumdumsProfileToken
+        dumdumdumsProfileToken.getBytes()
       )
     )
 

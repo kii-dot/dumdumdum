@@ -1,6 +1,6 @@
 package mint
 
-import boxes.{Box, BoxWrapper, CustomBoxData}
+import boxes.{Box, BoxWrapper}
 import registers.Register
 import commons.ErgCommons
 import org.ergoplatform.P2PKAddress

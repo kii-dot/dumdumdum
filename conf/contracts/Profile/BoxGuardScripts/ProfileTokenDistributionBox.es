@@ -18,16 +18,22 @@
     // val _DumDumDumProfileToken:          Coll[Byte]
 
     // ===== Box Details ===== //
-    // No registers needed
+    // R4: Service Fee
+    // R5: ServiceOwner Address
 
     // ===== Contract Conditions ===== //
     // 1. Creation of Profile Box
     // 2. Nada
 
+    val _inProfileDistributionBox = INPUTS(0)
+    val _outProfileDistributionBox = OUTPUTS(0)
+
     // ====== Creation ====== //
     // Inputs: ProfileDistributionBox(0), TxFee(1)
     // Outputs: ProfileDistributionBox(0), ProfileBox(1), MiningBox(2)
-    val _creationScenario = OUTPUTS.size == 3
+    val isOnly1TokenDistributed: Boolean =
+        _outProfileDistributionBox.tokens(1)._2 == _inProfileDistributionBox.tokens(1)._2 - 1
+    val _creationScenario: Boolean = isOnly1TokenDistributed
 
     // ====== Mutation ====== //
     // Inputs: ProfileDistributionBox(0)
@@ -44,7 +50,7 @@
     } else if (_creationScenario) {
         // ====== Creation ====== //
         // Inputs: ProfileDistributionBox(0), TxFee(1)
-        // Outputs: ProfileDistributionBox(0), ProfileBox(1), MiningBox(2)
+        // Outputs: ProfileDistributionBox(0), ProfileBox(1), ServiceFee(2), MiningBox(3)
         //
         // Conditions:
         // 1. X There can only be one distribution of the token
@@ -56,11 +62,9 @@
         // Note: We don't need to worry about Kra's bot because
         //      this tx requires a direct box from the creator.
         //      therefore most if not all txs can't be manipulated.
-
-        val _inProfileDistributionBox = INPUTS(0)
-
         val _profileBox = OUTPUTS(1)
-        val _outProfileDistributionBox = OUTPUTS(0)
+        val _txFeeBox = INPUTS(1)
+        val dataInputBox: Box           = CONTEXT.dataInputs(0)
 
         // Profile Distribution Box check
         val isProfileDistributionBoxAddressSame: Boolean =
@@ -68,9 +72,6 @@
 
         val isProfileDistributionBoxValueSame: Boolean =
             _inProfileDistributionBox.value == _outProfileDistributionBox.value
-
-        val isOnly1TokenDistributed: Boolean =
-            _outProfileDistributionBox.tokens(1)._2 == _inProfileDistributionBox.tokens(1)._2 - 1
 
         val isTokenSame: Boolean = allOf(Coll(
             _inProfileDistributionBox.tokens(0)._1 == _outProfileDistributionBox.tokens(0)._1,
@@ -91,21 +92,56 @@
         ))
 
         val isProfileBoxNFTAdded: Boolean = allOf(Coll(
-            _profileBox.R4[Coll[Byte]].isDefined
+            _profileBox.R5[Coll[Byte]].isDefined
+        ))
+
+        // UserAddress added to Profile Box
+        val isAddressInProfileBoxAdded: Boolean = allOf(Coll(
+            _profileBox.R4[Coll[Byte]].get == _txFeeBox.propositionBytes
         ))
 
         val profileBoxCheck: Boolean = allOf(Coll(
             isProfileBoxTokenReceived,
-            isProfileBoxNFTAdded
+            isProfileBoxNFTAdded,
+            isAddressInProfileBoxAdded
         ))
 
+        // NFT Insert
+        val isNftDataInputBelongsToUser: Boolean =
+            dataInputBox.propositionBytes == _profileBox.R4[Coll[Byte]].get
+
+        val filteredNFTToken: Coll[(Coll[Byte], Long)] =
+            dataInputBox.tokens
+                .filter{ (token: (Coll[Byte], Long)) => token._1 == _profileBox.R5[Coll[Byte]].get}
+
+        val isNftInDataInputBox: Boolean =
+            filteredNFTToken.size >= 1
+
+        val isNftChange: Boolean = allOf(Coll(
+            isNftDataInputBelongsToUser,
+            // @todo script is failing on DataInput
+            isNftInDataInputBox
+        ))
+
+        // Lets add a fee so that bad actors who wants to drain the token
+        // gets hurt more
+        val serviceFeeBox: Box = OUTPUTS(2)
+        val serviceFeePaid: Boolean = serviceFeeBox.value == SELF.R4[Long].get
+        val serviceFeeAddressIsOwner: Boolean =
+            serviceFeeBox.propositionBytes == SELF.R5[Coll[Byte]].get
+
+        val serviceFeeBoxCheck: Boolean = allOf(Coll(
+            serviceFeePaid,
+            serviceFeeAddressIsOwner
+        ))
 
         sigmaProp(allOf(Coll(
             profileDistributionBoxCheck,
             isOnly1TokenDistributed,
-            profileBoxCheck
+            profileBoxCheck,
+            isNftChange,
+            serviceFeeBoxCheck
         )))
-
     } else {
         sigmaProp(false)
     }

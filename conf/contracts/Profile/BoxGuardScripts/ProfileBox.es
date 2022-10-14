@@ -34,7 +34,14 @@
     // ====== Mutation ====== //
     // Inputs: ProfileBox(0)
     // Outputs: ProfileBox(0), MiningBox(1)
-    if (OUTPUTS.size == 2) {
+    val isProfileBoxOutput: Boolean = allOf(Coll(
+        inProfileBox.tokens(0)._1 == outProfileBox.tokens(0)._1,
+        inProfileBox.tokens(0)._2 == outProfileBox.tokens(0)._2,
+        inProfileBox.tokens(0)._1 == _DumDumDumProfileToken,
+        inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]]
+    ))
+
+    if (isProfileBoxOutput) {
         val dataInputBox: Box           = CONTEXT.dataInputs(0)
 
         val isProfileBoxTokenSame: Boolean = allOf(Coll(
@@ -42,22 +49,39 @@
             inProfileBox.tokens(0)._2 == outProfileBox.tokens(0)._2,
             inProfileBox.tokens.size == 1,
             outProfileBox.tokens.size == 1,
-            inProfileBox.tokens(0)._1 == _DumDumDumToken,
+            inProfileBox.tokens(0)._1 == _DumDumDumProfileToken,
+            inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]]
         ))
 
         val isProfileBoxValueSame: Boolean =
-            inProfileBox.value == outProfileBox.value,
+            inProfileBox.value == outProfileBox.value
 
         val isProfileBoxAddressSame: Boolean =
             inProfileBox.propositionBytes == outProfileBox.propositionBytes
 
+        // NFT Change
+        val isNftDataInputBelongsToUser: Boolean =
+            dataInputBox.propositionBytes == inProfileBox.R4[Coll[Byte]].get
+
+        val filteredNFTToken: Coll[(Coll[Byte], Long)] =
+            dataInputBox.tokens
+                .filter{ (token: (Coll[Byte], Long)) => token._1 == outProfileBox.R5[Coll[Byte]].get}
+
+        val isNftInDataInputBox: Boolean =
+            filteredNFTToken.size == 1
+
+        val isNftChange: Boolean = allOf(Coll(
+            isNftDataInputBelongsToUser,
+            isNftInDataInputBox
+        ))
+
         sigmaProp(allOf(
             Coll(
                 _OwnerPK,
-                anyOf(
-                    inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]],
-                    inProfileBox.R5[Coll[Coll[Byte]]] == outProfileBox.R5[Coll[Coll[Byte]]]
-                ),
+                anyOf(Coll(
+                    isNftChange,
+                    inProfileBox.R6[Coll[Coll[Byte]]] == outProfileBox.R6[Coll[Coll[Byte]]]
+                )),
                 isProfileBoxTokenSame,
                 isProfileBoxValueSame,
                 isProfileBoxAddressSame

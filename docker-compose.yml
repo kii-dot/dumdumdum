@@ -2,8 +2,6 @@ x-app: &default-app
   build:
     context: "."
     target: "${BUILD_TARGET:-app}"
-  env_file:
-    - .env
   restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
   stop_grace_period: "3s"
   tty: true

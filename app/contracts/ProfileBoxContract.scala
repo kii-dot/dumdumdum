@@ -14,7 +14,7 @@ object ProfileBoxContract {
       (ProfileBoxContractConstants.ownerPk, ownerPk.getPublicKey),
       (
         ProfileBoxContractConstants.dumdumdumProfileToken,
-        dumdumdumsProfileToken
+        dumdumdumsProfileToken.getBytes()
       )
     )
 

@@ -7,4 +7,5 @@ object Configs extends ConfigHelper {
     "tokens.dumdumdumsProfileToken"
   )
   lazy val serviceOwner: String = readKey("service.owner")
+  lazy val serviceFee: Long = readKey("service.fee").toLong
 }

@@ -25,6 +25,14 @@ val PlayCirceVersion = "2712.0"
 scalaVersion := "2.12.15"
 
 libraryDependencies += guice
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.0.0" % Test
+libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 libraryDependencies += "io.exle" % "edge_2.12" % "0.1"
 libraryDependencies += "com.dripower" %% "play-circe" % PlayCirceVersion
+
+
+assembly / assemblyMergeStrategy := {
+  case PathList("META-INF", xs @ _*) => MergeStrategy.discard
+  case x                             => MergeStrategy.first
+}
+
+assembly / assemblyJarName := s"${name.value}-${version.value}.jar"
