@@ -2,11 +2,28 @@ package profile
 
 import boxes.{Box, BoxWrapper, BoxWrapperHelper}
 import commons.ErgCommons
-import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceFee, serviceOwner}
+import config.Configs.{
+  dumdumdumsNFT,
+  dumdumdumsProfileToken,
+  serviceFee,
+  serviceOwner
+}
 import contracts.{ProfileBoxContract, ProfileTokenDistributionBoxContract}
-import edge.registers.{AddressRegister, CollAddressRegister, CollStringRegister, LongRegister}
+import edge.registers.{
+  AddressRegister,
+  CollAddressRegister,
+  CollStringRegister,
+  LongRegister
+}
 import mint.Client
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoContract, ErgoId, ErgoToken, InputBox}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoContract,
+  ErgoId,
+  ErgoToken,
+  InputBox
+}
 import registers.Register
 import special.collection.Coll
 import tokens.TokenHelper
@@ -14,14 +31,14 @@ import tokens.TokenHelper
 import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
 
 case class ProfileBox(
-                       addressRegister: AddressRegister,
-                       followingRegister: CollAddressRegister,
-                       override val tokens: Seq[ErgoToken] = Seq(
+  addressRegister: AddressRegister,
+  followingRegister: CollAddressRegister,
+  override val tokens: Seq[ErgoToken] = Seq(
     new ErgoToken(dumdumdumsProfileToken, 1)
   ),
-                       override val value: Long = ErgCommons.MinBoxFee,
-                       override val id: ErgoId = null,
-                       override val box: Option[Box] = Option.empty
+  override val value: Long = ErgCommons.MinBoxFee,
+  override val id: ErgoId = null,
+  override val box: Option[Box] = Option.empty
 ) extends BoxWrapper {
 
   override def getContract(implicit ctx: BlockchainContext): ErgoContract =
@@ -62,7 +79,8 @@ object ProfileBox {
           .get(2)
           .getValue
           .asInstanceOf[Coll[Coll[Byte]]]
-          .toArray.map(collByte => Address.create(collByte.toString()))
+          .toArray
+          .map(collByte => Address.create(collByte.toString()))
       ),
       box = Option(Box(inputBox))
     )
@@ -82,7 +100,9 @@ case class ProfileTokenDistributionBox(
     ProfileTokenDistributionBoxContract.getContract.contract.ergoContract
 
   override def R4: Option[Register[_]] = Option(new LongRegister(serviceFee))
-  override def R5: Option[Register[_]] = Option(new AddressRegister(serviceOwner))
+
+  override def R5: Option[Register[_]] =
+    Option(new AddressRegister(serviceOwner))
 }
 
 object ProfileTokenDistributionBox extends BoxWrapperHelper {

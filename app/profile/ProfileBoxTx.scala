@@ -1,16 +1,48 @@
 package profile
 
+import boxes.FundsToAddressBox
 import commons.ErgCommons
-import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceFee}
+import config.Configs.{dumdumdumsProfileToken, serviceFee}
 import contracts.ProfileBoxContract
-import edge.registers.{AddressRegister, CollAddressRegister, CollByteRegister, CollStringRegister, StringRegister}
+import edge.registers.{
+  AddressRegister,
+  CollAddressRegister,
+  CollByteRegister,
+  CollStringRegister,
+  StringRegister
+}
 import mint.{Client, TweetExplorer}
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoId, ErgoToken, InputBox, OutBox}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoId,
+  ErgoToken,
+  InputBox,
+  OutBox
+}
 import txs.Tx
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
+
+abstract class UserTx(userAddress: Address) extends Tx {
+  override val changeAddress: P2PKAddress = userAddress.asP2PK()
+}
+
+abstract class UserProfileTx(userAddress: Address, client: Client)
+    extends UserTx(userAddress) {
+
+  val profileBox: ProfileBox = ProfileBox.from(
+    client
+      .getCoveringBoxesFor(
+        ProfileBoxContract.getContract(userAddress).contract.address,
+        ErgCommons.MinMinerFee
+      )
+      .getBoxes
+      .head
+  )
+}
 
 /**
   * // ============== Profile Box Creation TX ================= //
@@ -26,51 +58,113 @@ class ProfileBoxCreationTx(
   explorer: TweetExplorer
 )(
   implicit val ctx: BlockchainContext
-) extends Tx {
-  override val changeAddress: P2PKAddress = userAddress.asP2PK()
+) extends UserTx(userAddress) {
+  val txFee: Long = ErgCommons.MinMinerFee * 2 + serviceFee
 
-  val profileTokenDistributionBox: InputBox = ctx
-    .getBoxesById(
-      explorer
-        .getUnspentTokenBoxes(dumdumdumsNFT)
-        .hcursor
-        .downField("boxId")
-        .as[String]
-        .getOrElse("")
+  val profileTokenDistributionBox: ProfileTokenDistributionBox =
+    ProfileTokenDistributionBox.from(
+      explorer.getProfileTokenDistributionInputBox
     )
-    .head
 
   override val inputBoxes: Seq[InputBox] = {
-    val txFeeFromUser: Seq[InputBox] =
+    val txFeeBox: Seq[InputBox] =
       client
         .getCoveringBoxesFor(
           userAddress,
-          ErgCommons.MinMinerFee * 2 + serviceFee,
+          txFee + ErgCommons.MinMinerFee,
           Seq(new ErgoToken(nftId, 1)).asJava
         )
         .toSeq
 
-    Seq(profileTokenDistributionBox) ++ txFeeFromUser
+    Seq(profileTokenDistributionBox.box.get.input) ++ txFeeBox
   }
 
   override def getOutBoxes: Seq[OutBox] = {
-    val outProfileTokenDistributionBox: ProfileTokenDistributionBox =
-      ProfileTokenDistributionBox.decrementProfileToken(
-        ProfileTokenDistributionBox.from(profileTokenDistributionBox)
-      )
-
-    val profileBox: ProfileBox = ProfileBox(
-      tokens =
-        Seq(new ErgoToken(dumdumdumsProfileToken, 1), new ErgoToken(nftId, 1)),
+    val profileBox: ProfileBox = new ProfileBox(
       addressRegister = new AddressRegister(userAddress),
-      followingRegister = CollAddressRegister.empty
+      followingRegister = new CollAddressRegister(Seq(userAddress)),
+      tokens =
+        Seq(new ErgoToken(dumdumdumsProfileToken, 1), new ErgoToken(nftId, 1))
     )
 
     Seq(
-      outProfileTokenDistributionBox.getOutBox(ctx, ctx.newTxBuilder()),
+      ProfileTokenDistributionBox
+        .decrementProfileToken(profileTokenDistributionBox)
+        .getOutBox(ctx, ctx.newTxBuilder()),
       profileBox.getOutBox(ctx, ctx.newTxBuilder())
     )
   }
+}
+
+class ProfileBoxIssuerBoxTx(
+  userAddress: Address,
+  client: Client,
+  explorer: TweetExplorer,
+  addressToFollow: Option[Address] = Option.empty,
+  nftId: String = "",
+  txFee: Long = ErgCommons.MinBoxFee * 2
+)(implicit val ctx: BlockchainContext)
+    extends UserTx(userAddress) {
+
+  val nftToken: Option[ErgoToken] =
+    if (nftId.nonEmpty)
+      Option(new ErgoToken(nftId, 1))
+    else Option.empty
+
+  override val inputBoxes: Seq[InputBox] = {
+    if (nftToken.nonEmpty) {
+      client
+        .getCoveringBoxesFor(
+          address = userAddress,
+          amount = txFee + ErgCommons.MinMinerFee,
+          tokensToSpend = Seq(nftToken.get).asJava
+        )
+        .toSeq
+    } else {
+      client
+        .getCoveringBoxesFor(
+          address = userAddress,
+          amount = txFee + ErgCommons.MinMinerFee
+        )
+        .getBoxes
+        .toSeq
+    }
+  }
+
+  // OutBox with token and user address
+  override def getOutBoxes: Seq[OutBox] =
+    if (nftToken.nonEmpty) {
+      Seq(
+        ctx
+          .newTxBuilder()
+          .outBoxBuilder()
+          .value(txFee)
+          .tokens(nftToken.get)
+          .contract(userAddress.toErgoContract)
+          .registers(new AddressRegister(userAddress).toErgoValue.get)
+          .build()
+      )
+    } else if (addressToFollow.nonEmpty) {
+      Seq(
+        ctx
+          .newTxBuilder()
+          .outBoxBuilder()
+          .value(txFee)
+          .contract(userAddress.toErgoContract)
+          .registers(new AddressRegister(addressToFollow.get).toErgoValue.get)
+          .build()
+      )
+    } else {
+      Seq(
+        ctx
+          .newTxBuilder()
+          .outBoxBuilder()
+          .value(txFee)
+          .contract(userAddress.toErgoContract)
+          .registers(new AddressRegister(userAddress).toErgoValue.get)
+          .build()
+      )
+    }
 }
 
 /**
@@ -84,23 +178,17 @@ class ProfileBoxChangeProfileNFTTx(
   userAddress: Address,
   nftId: String,
   client: Client,
-  explorer: TweetExplorer
+  explorer: TweetExplorer,
+  txFeeBox: InputBox
 )(
   implicit val ctx: BlockchainContext
-) extends Tx {
+) extends UserProfileTx(userAddress, client) {
   override val changeAddress: P2PKAddress = userAddress.asP2PK()
 
   override val inputBoxes: Seq[InputBox] = {
-    val profileInputBox: InputBox = ProfileBox.get(userAddress)(client)
-    val txFeeFromUser: Seq[InputBox] =
-      client
-        .getCoveringBoxesFor(
-          userAddress,
-          ErgCommons.MinMinerFee * 2,
-          Seq(new ErgoToken(nftId, 1)).asJava
-        )
+    val profileInputBox: InputBox = profileBox.box.get.input
 
-    Seq(profileInputBox) ++ txFeeFromUser
+    Seq(profileInputBox) ++ Seq(txFeeBox)
   }
 
   override def getOutBoxes: Seq[OutBox] = {
@@ -127,14 +215,32 @@ class ProfileBoxChangeProfileNFTTx(
   * dataInputs: 1. ToFollowsProfileBox (you can only follow someone who has a profile)
   * @param ctx Blockchain Context
   */
-class ProfileBoxAddFollowingTx(userAddress: Address)(
+class ProfileBoxAddFollowingTx(
+  userAddress: Address,
+  addressToFollow: Address,
+  txFeeBox: InputBox,
+  client: Client
+)(
   implicit val ctx: BlockchainContext
-) extends Tx {
+) extends UserProfileTx(userAddress, client) {
   override val changeAddress: P2PKAddress = userAddress.asP2PK()
-  override val inputBoxes: Seq[InputBox] = Seq.empty
 
-  override def getOutBoxes: Seq[OutBox] =
-    Seq()
+  override val inputBoxes: Seq[InputBox] = {
+    Seq(profileBox.box.get.input, txFeeBox)
+  }
+
+  override def getOutBoxes: Seq[OutBox] = {
+    val followingRegister: CollAddressRegister = new CollAddressRegister(
+      profileBox.followingRegister.collAddress ++ Seq(addressToFollow)
+    )
+    Seq(
+      profileBox
+        .copy(
+          followingRegister = followingRegister
+        )
+        .getOutBox(ctx, ctx.newTxBuilder())
+    )
+  }
 }
 
 /**
@@ -144,14 +250,34 @@ class ProfileBoxAddFollowingTx(userAddress: Address)(
   * dataInputs: 1. ToUnFollowsProfileBox (you can only follow someone who has a profile)
   * @param ctx Blockchain Context
   */
-class ProfileBoxRemoveFollowingTx(userAddress: Address)(
+class ProfileBoxRemoveFollowingTx(
+  userAddress: Address,
+  addressToUnfollow: Address,
+  txFeeBox: InputBox,
+  client: Client
+)(
   implicit val ctx: BlockchainContext
-) extends Tx {
+) extends UserProfileTx(userAddress, client) {
   override val changeAddress: P2PKAddress = userAddress.asP2PK()
-  override val inputBoxes: Seq[InputBox] = Seq.empty
 
-  override def getOutBoxes: Seq[OutBox] =
-    Seq()
+  override val inputBoxes: Seq[InputBox] = {
+    Seq(profileBox.box.get.input, txFeeBox)
+  }
+
+  override def getOutBoxes: Seq[OutBox] = {
+    val collAddressRegister: CollAddressRegister = new CollAddressRegister(
+      profileBox.followingRegister.collAddress.filter(address =>
+        !address.equals(addressToUnfollow)
+      )
+    )
+    Seq(
+      profileBox
+        .copy(
+          followingRegister = collAddressRegister
+        )
+        .getOutBox(ctx, ctx.newTxBuilder())
+    )
+  }
 }
 
 /**
@@ -160,26 +286,29 @@ class ProfileBoxRemoveFollowingTx(userAddress: Address)(
   * outputs: 1. MiningBox
   * @param ctx Blockchain Context
   */
-class DeleteProfileBoxTx(userAddress: Address, client: Client)(
+class DeleteProfileBoxTx(
+  userAddress: Address,
+  client: Client,
+  txFeeBox: InputBox
+)(
   implicit val ctx: BlockchainContext
-) extends Tx {
-  override val changeAddress: P2PKAddress = userAddress.asP2PK()
+) extends UserProfileTx(userAddress, client) {
 
   override val inputBoxes: Seq[InputBox] = {
-    val profileBox: InputBox = client
-      .getCoveringBoxesFor(
-        ProfileBoxContract.getContract(userAddress).contract.address,
-        ErgCommons.MinMinerFee,
-        tokensToBurn.toList.asJava
-      )
-      .head
-
-    Seq(profileBox)
+    Seq(profileBox.box.get.input) ++ Seq(txFeeBox)
   }
 
   override val tokensToBurn: Seq[ErgoToken] = Seq(
     new ErgoToken(dumdumdumsProfileToken, 1)
   )
 
-  override def getOutBoxes: Seq[OutBox] = Seq.empty
+  override def getOutBoxes: Seq[OutBox] =
+    Seq(
+      FundsToAddressBox(
+        address = userAddress,
+        value = ErgCommons.MinBoxFee,
+        tokens = Seq(profileBox.tokens(1)),
+        R4 = profileBox.R4
+      ).getOutBox(ctx, ctx.newTxBuilder())
+    )
 }

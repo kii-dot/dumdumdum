@@ -7,7 +7,19 @@ import edge.registers.{AddressRegister, CollAddressRegister, CollStringRegister}
 import mint.{Client, TweetExplorer}
 import org.ergoplatform.P2PKAddress
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoClient, ErgoProver, ErgoToken, InputBox, NetworkType, OutBox, Parameters, RestApiErgoClient, SecretString}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoClient,
+  ErgoProver,
+  ErgoToken,
+  InputBox,
+  NetworkType,
+  OutBox,
+  Parameters,
+  RestApiErgoClient,
+  SecretString
+}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import profile.{ProfileBox, ProfileTokenDistributionBox}
@@ -71,9 +83,12 @@ class ProfileTxSpec extends AnyWordSpec with Matchers {
   ): ProfileBox = {
     val profileBox: ProfileBox = ProfileBox(
       addressRegister = new AddressRegister(address),
-      tokens = if (nftId.nonEmpty) Seq(new ErgoToken(dumdumdumsProfileToken, 1), new ErgoToken(nftId, 1)) else {
-        Seq(new ErgoToken(dumdumdumsProfileToken, 1))
-      },
+      tokens =
+        if (nftId.nonEmpty)
+          Seq(new ErgoToken(dumdumdumsProfileToken, 1), new ErgoToken(nftId, 1))
+        else {
+          Seq(new ErgoToken(dumdumdumsProfileToken, 1))
+        },
       followingRegister = new CollAddressRegister(followerArray)
     )
 
@@ -126,26 +141,29 @@ class ProfileTxSpec extends AnyWordSpec with Matchers {
   }
 
   class ProfileBox_ChangeNFTTestTx()(implicit val ctx: BlockchainContext)
-    extends Tx {
-        override val changeAddress: P2PKAddress = address.asP2PK()
+      extends Tx {
+    override val changeAddress: P2PKAddress = address.asP2PK()
 
     override val inputBoxes: Seq[InputBox] = {
       val profileBox: ProfileBox = createProfileBox(address, nftId = nftId2)
-      val profileAsInputBox: InputBox = profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val profileAsInputBox: InputBox =
+        profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
       val userTx: FundsToAddressBox = FundsToAddressBox(
         value = ErgCommons.MinMinerFee * 3,
         address = address,
         tokens = Seq(new ErgoToken(nftId, 1)),
         R4 = Option(new AddressRegister(address))
       )
-      val userTxAsInputBox: InputBox = userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val userTxAsInputBox: InputBox =
+        userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
 
       Seq(profileAsInputBox, userTxAsInputBox)
     }
 
     override def getOutBoxes: Seq[OutBox] = {
       val profileBox: ProfileBox = createProfileBox(address, nftId)
-      val profileBoxAsOutBox: OutBox = profileBox.getOutBox(ctx, ctx.newTxBuilder())
+      val profileBoxAsOutBox: OutBox =
+        profileBox.getOutBox(ctx, ctx.newTxBuilder())
       val userTx: OutBox = FundsToAddressBox(
         address = address,
         tokens = Seq(new ErgoToken(nftId2, 1)),
@@ -156,18 +174,20 @@ class ProfileTxSpec extends AnyWordSpec with Matchers {
   }
 
   class ProfileBox_DeleteTestTx()(implicit val ctx: BlockchainContext)
-    extends Tx {
+      extends Tx {
     override val changeAddress: P2PKAddress = address.asP2PK()
 
     override val inputBoxes: Seq[InputBox] = {
       val profileBox: ProfileBox = createProfileBox(address, nftId)
-      val profileAsInputBox: InputBox = profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val profileAsInputBox: InputBox =
+        profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
       val userTx: FundsToAddressBox = FundsToAddressBox(
         value = ErgCommons.MinMinerFee * 2,
         address = address,
         R4 = Option(new AddressRegister(address))
       )
-      val userTxAsInputBox: InputBox = userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val userTxAsInputBox: InputBox =
+        userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
 
       Seq(profileAsInputBox, userTxAsInputBox)
     }
@@ -186,44 +206,62 @@ class ProfileTxSpec extends AnyWordSpec with Matchers {
   }
 
   class ProfileBox_AddFollowingTestTx()(implicit val ctx: BlockchainContext)
-    extends Tx {
+      extends Tx {
     override val changeAddress: P2PKAddress = address.asP2PK()
 
     override val inputBoxes: Seq[InputBox] = {
       val profileBox: ProfileBox = createProfileBox(address, nftId)
-      val profileAsInputBox: InputBox = profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
-      val userTx: FundsToAddressBox = FundsToAddressBox(address, R4 = Option(new AddressRegister(exleDevAddress)))
-      val userTxAsInputBox: InputBox = userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val profileAsInputBox: InputBox =
+        profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val userTx: FundsToAddressBox = FundsToAddressBox(
+        address,
+        R4 = Option(new AddressRegister(exleDevAddress))
+      )
+      val userTxAsInputBox: InputBox =
+        userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
 
       Seq(profileAsInputBox, userTxAsInputBox)
     }
 
     override def getOutBoxes: Seq[OutBox] = {
-      val profileBox: ProfileBox = createProfileBox(address, nftId, followerArray = Seq(address, exleDevAddress))
-      val profileBoxAsOutBox: OutBox = profileBox.getOutBox(ctx, ctx.newTxBuilder())
+      val profileBox: ProfileBox = createProfileBox(
+        address,
+        nftId,
+        followerArray = Seq(address, exleDevAddress)
+      )
+      val profileBoxAsOutBox: OutBox =
+        profileBox.getOutBox(ctx, ctx.newTxBuilder())
 
       Seq(profileBoxAsOutBox)
     }
   }
 
   class ProfileBox_RemoveFollowingTestTx()(implicit val ctx: BlockchainContext)
-    extends Tx {
+      extends Tx {
     override val changeAddress: P2PKAddress = address.asP2PK()
 
     override val inputBoxes: Seq[InputBox] = {
-      val profileBox: ProfileBox = createProfileBox(address, nftId, followerArray = Seq(address, exleDevAddress))
-      val profileAsInputBox: InputBox = profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+      val profileBox: ProfileBox = createProfileBox(
+        address,
+        nftId,
+        followerArray = Seq(address, exleDevAddress)
+      )
+      val profileAsInputBox: InputBox =
+        profileBox.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
       val userTx: FundsToAddressBox = FundsToAddressBox(
         address,
-        R4 = Option(new AddressRegister(exleDevAddress)))
-      val userTxAsInputBox: InputBox = userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
+        R4 = Option(new AddressRegister(exleDevAddress))
+      )
+      val userTxAsInputBox: InputBox =
+        userTx.getAsInputBox(ctx, ctx.newTxBuilder(), Tx.dummyTxId, 0)
 
       Seq(profileAsInputBox, userTxAsInputBox)
     }
 
     override def getOutBoxes: Seq[OutBox] = {
       val profileBox: ProfileBox = createProfileBox(address, nftId)
-      val profileBoxAsOutBox: OutBox = profileBox.getOutBox(ctx, ctx.newTxBuilder())
+      val profileBoxAsOutBox: OutBox =
+        profileBox.getOutBox(ctx, ctx.newTxBuilder())
 
       Seq(profileBoxAsOutBox)
     }

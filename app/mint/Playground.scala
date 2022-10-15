@@ -1,23 +1,34 @@
 package runners.helpers
 
 import commons.ErgCommons
-import config.Configs.{dumdumdumsProfileToken, serviceOwner}
+import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceOwner}
+import contracts.ProfileTokenDistributionBoxContract
 import mint.{Client, NFTMinter, TweetProtocol}
 import org.ergoplatform.appkit.{
   Address,
   BlockchainContext,
+  BoxOperations,
   ErgoClient,
   ErgoId,
   ErgoProver,
+  ErgoToken,
+  InputBox,
   NetworkType,
+  OutBox,
   ReducedTransaction,
   RestApiErgoClient,
   SecretString,
-  SignedTransaction
+  SignedTransaction,
+  UnsignedTransaction
 }
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
 import profile.{CreateDumDumDumsTx, DumDumDumHandler}
 import tokens.SigUSD
+
+import scala.collection.JavaConverters.{
+  collectionAsScalaIterableConverter,
+  seqAsJavaListConverter
+}
 
 /**
   * Spender
@@ -117,6 +128,88 @@ object Spender {
     reducedTxs
   }
 
+  def mergeDumDumDums(
+    ergoClient: ErgoClient,
+    prover: ErgoProver
+  ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val boxOperations =
+          BoxOperations.createForSender(Address.create(walletAddress), ctx)
+        val inputBoxes: java.util.List[InputBox] = boxOperations
+          .withAmountToSpend(ErgCommons.MinBoxFee * 2)
+          .withTokensToSpend(
+            Seq(
+              new ErgoToken(dumdumdumsNFT, 1),
+              new ErgoToken(dumdumdumsProfileToken, 1)
+            ).toList.asJava
+          )
+          .loadTop()
+        val dumdumdumsNFTTokenBox: InputBox = inputBoxes.asScala.toSeq
+          .filter(box =>
+            box.getTokens.asScala.toSeq
+              .exists(token => token.getId == ErgoId.create(dumdumdumsNFT))
+          )
+          .head
+
+        val dumdumdumsProfileTokenBox: InputBox = inputBoxes.asScala.toSeq
+          .filter(box =>
+            box.getTokens.asScala.toSeq.exists(token =>
+              token.getId == ErgoId.create(dumdumdumsProfileToken)
+            )
+          )
+          .head
+
+        val dumdumdumsNFTToken: ErgoToken =
+          dumdumdumsNFTTokenBox.getTokens.asScala.toSeq
+            .filter(token => token.getId == ErgoId.create(dumdumdumsNFT))
+            .head
+
+        val dumdumdumsProfileTokenToken: ErgoToken =
+          dumdumdumsNFTTokenBox.getTokens.asScala.toSeq
+            .filter(token =>
+              token.getId == ErgoId.create(dumdumdumsProfileToken)
+            )
+            .head
+
+        val inputBoxToSpend: Seq[InputBox] =
+          if (dumdumdumsNFTTokenBox.getId.equals(
+                dumdumdumsProfileTokenBox.getId
+              )) {
+            Seq(dumdumdumsNFTTokenBox)
+          } else Seq(dumdumdumsProfileTokenBox, dumdumdumsNFTTokenBox)
+
+        val outBox: OutBox = ctx
+          .newTxBuilder()
+          .outBoxBuilder()
+          .value(ErgCommons.MinBoxFee)
+          .tokens(
+            dumdumdumsNFTToken,
+            dumdumdumsProfileTokenToken
+          )
+          .contract(
+            ProfileTokenDistributionBoxContract
+              .getContract(ctx)
+              .contract
+              .ergoContract
+          )
+          .build()
+
+        val tx: UnsignedTransaction = ctx
+          .newTxBuilder()
+          .boxesToSpend(inputBoxes)
+          .outputs(outBox)
+          .fee(ErgCommons.MinBoxFee)
+          .sendChangeTo(Address.create(walletAddress).getErgoAddress)
+          .build()
+
+        val reducedTx: ReducedTransaction = prover.reduce(tx, 0)
+        Seq((Address.create(walletAddress), reducedTx))
+    }
+
+    reducedTxs
+  }
+
   def main(args: Array[String]): Unit = {
     println("Spender Start Spending")
     val configFileName = "ergo_config.json"
@@ -144,7 +237,7 @@ object Spender {
 
     // Tx happens Here
     val txJsons: Seq[(Address, ReducedTransaction)] =
-      burnDumDumDums(ergoClient, prover)
+      mergeDumDumDums(ergoClient, prover)
     // Tx Ends Here
 
     val signed =

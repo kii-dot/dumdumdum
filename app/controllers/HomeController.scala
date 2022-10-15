@@ -12,11 +12,13 @@ import play.api.Logger
 
 import javax.inject._
 import play.api.mvc._
+import profile.Profile
 
 class HomeController @Inject() (
   val client: Client,
   val NFTMinter: NFTMinter,
   val feed: Feed,
+  val profile: Profile,
   val controllerComponents: ControllerComponents
 ) extends BaseController
     with Circe
@@ -182,8 +184,22 @@ class HomeController @Inject() (
       try {
         val address: String = getRequestBodyAsString(request, "address")
         val nftId: String = getRequestBodyAsString(request, "nftId")
+        val createProfileTx: Seq[(Address, ReducedTransaction)] =
+          profile.create(
+            address = Address.create(address),
+            nftId = nftId
+          )
 
-        Ok(Json.fromString(address)).as("application/json")
+        val ergoPayResponse: Seq[ErgoPayResponse] = createProfileTx.map(tx =>
+          ErgoPayResponse.getResponse(
+            recipient = tx._1,
+            reducedTx = tx._2,
+            message = "DumDumDum: Create Profile",
+            replyTo = address
+          )
+        )
+
+        Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -193,9 +209,22 @@ class HomeController @Inject() (
     implicit request: Request[Json] =>
       try {
         val address: String = getRequestBodyAsString(request, "address")
-        val nftId: String = getRequestBodyAsString(request, "nftId")
 
-        Ok(Json.fromString(address)).as("application/json")
+        val deleteProfileTx: Seq[(Address, ReducedTransaction)] =
+          profile.delete(
+            address = Address.create(address)
+          )
+
+        val ergoPayResponse: Seq[ErgoPayResponse] = deleteProfileTx.map(tx =>
+          ErgoPayResponse.getResponse(
+            recipient = tx._1,
+            reducedTx = tx._2,
+            message = "DumDumDum: Delete Profile",
+            replyTo = address
+          )
+        )
+
+        Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -207,7 +236,22 @@ class HomeController @Inject() (
         val address: String = getRequestBodyAsString(request, "address")
         val nftId: String = getRequestBodyAsString(request, "nftId")
 
-        Ok(Json.fromString(address)).as("application/json")
+        val changeProfileNFTTx: Seq[(Address, ReducedTransaction)] =
+          profile.changeProfileNFT(
+            address = Address.create(address),
+            nftId = nftId
+          )
+
+        val ergoPayResponse: Seq[ErgoPayResponse] = changeProfileNFTTx.map(tx =>
+          ErgoPayResponse.getResponse(
+            recipient = tx._1,
+            reducedTx = tx._2,
+            message = "DumDumDum: Delete Profile",
+            replyTo = address
+          )
+        )
+
+        Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -221,7 +265,22 @@ class HomeController @Inject() (
         val walletAddress: String =
           getRequestBodyAsString(request, "walletAddress")
 
-        Ok(Json.fromString(walletAddress)).as("application/json")
+        val followTx: Seq[(Address, ReducedTransaction)] =
+          profile.follow(
+            walletAddress = Address.create(walletAddress),
+            addressToFollow = Address.create(addressToFollow)
+          )
+
+        val ergoPayResponse: Seq[ErgoPayResponse] = followTx.map(tx =>
+          ErgoPayResponse.getResponse(
+            recipient = tx._1,
+            reducedTx = tx._2,
+            message = "DumDumDum: Delete Profile",
+            replyTo = walletAddress
+          )
+        )
+
+        Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -235,7 +294,22 @@ class HomeController @Inject() (
         val walletAddress: String =
           getRequestBodyAsString(request, "walletAddress")
 
-        Ok(Json.fromString(walletAddress)).as("application/json")
+        val unfollowTx: Seq[(Address, ReducedTransaction)] =
+          profile.unfollow(
+            walletAddress = Address.create(walletAddress),
+            addressToUnfollow = Address.create(addressToUnfollow)
+          )
+
+        val ergoPayResponse: Seq[ErgoPayResponse] = unfollowTx.map(tx =>
+          ErgoPayResponse.getResponse(
+            recipient = tx._1,
+            reducedTx = tx._2,
+            message = "DumDumDum: Delete Profile",
+            replyTo = walletAddress
+          )
+        )
+
+        Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }

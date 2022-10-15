@@ -2,8 +2,7 @@ package profile
 
 import boxes.{Box, BoxWrapper}
 import commons.ErgCommons
-import edge.registers.StringRegister
-import mint.{Client, CreateIssuerBoxTx}
+import mint.{Client, CreateIssuerBoxTx, TweetExplorer}
 import org.ergoplatform.P2PKAddress
 import org.ergoplatform.appkit.{
   Address,
@@ -24,7 +23,123 @@ import javax.inject.Inject
 import scala.collection.JavaConverters.seqAsJavaListConverter
 import scala.collection.convert.ImplicitConversions.`list asScalaBuffer`
 
-class Profile {}
+class Profile @Inject() (client: Client, explorer: TweetExplorer) {
+
+  def create(
+    address: Address,
+    nftId: String
+  ): Seq[(Address, ReducedTransaction)] = {
+    val createProfileTx: ProfileBoxCreationTx = new ProfileBoxCreationTx(
+      userAddress = address,
+      nftId = nftId,
+      client = client,
+      explorer = explorer
+    )(client.getContext)
+
+    Seq((address, createProfileTx.reduceTx))
+  }
+
+  def changeProfileNFT(
+    address: Address,
+    nftId: String
+  ): Seq[(Address, ReducedTransaction)] = {
+    val issuerBoxTx: ProfileBoxIssuerBoxTx = new ProfileBoxIssuerBoxTx(
+      userAddress = address,
+      nftId = nftId,
+      client = client,
+      explorer = explorer
+    )(client.getContext)
+    val reducedIssuerBoxTx: ReducedTransaction = issuerBoxTx.reduceTx
+
+    val issuerBox: InputBox =
+      issuerBoxTx.getOutBoxesAsInputBoxes(reducedIssuerBoxTx.getId).head
+
+    val changeProfileNFTTx: ProfileBoxChangeProfileNFTTx =
+      new ProfileBoxChangeProfileNFTTx(
+        userAddress = address,
+        nftId = nftId,
+        client = client,
+        explorer = explorer,
+        txFeeBox = issuerBox
+      )(client.getContext)
+
+    Seq((address, reducedIssuerBoxTx), (address, changeProfileNFTTx.reduceTx))
+  }
+
+  def delete(address: Address): Seq[(Address, ReducedTransaction)] = {
+    val issuerBoxTx: ProfileBoxIssuerBoxTx = new ProfileBoxIssuerBoxTx(
+      userAddress = address,
+      client = client,
+      explorer = explorer
+    )(client.getContext)
+    val reducedIssuerBoxTx: ReducedTransaction = issuerBoxTx.reduceTx
+    val issuerBox: InputBox =
+      issuerBoxTx.getOutBoxesAsInputBoxes(reducedIssuerBoxTx.getId).head
+
+    val deleteProfileBoxTx: DeleteProfileBoxTx = new DeleteProfileBoxTx(
+      userAddress = address,
+      client = client,
+      txFeeBox = issuerBox
+    )(client.getContext)
+
+    Seq((address, reducedIssuerBoxTx), (address, deleteProfileBoxTx.reduceTx))
+  }
+
+  def follow(
+    walletAddress: Address,
+    addressToFollow: Address
+  ): Seq[(Address, ReducedTransaction)] = {
+    val issuerBoxTx: ProfileBoxIssuerBoxTx = new ProfileBoxIssuerBoxTx(
+      userAddress = walletAddress,
+      client = client,
+      explorer = explorer,
+      addressToFollow = Option(addressToFollow)
+    )(client.getContext)
+    val reducedIssuerBoxTx: ReducedTransaction = issuerBoxTx.reduceTx
+    val issuerBox: InputBox =
+      issuerBoxTx.getOutBoxesAsInputBoxes(reducedIssuerBoxTx.getId).head
+
+    val followingTx: ProfileBoxAddFollowingTx = new ProfileBoxAddFollowingTx(
+      userAddress = walletAddress,
+      txFeeBox = issuerBox,
+      client = client,
+      addressToFollow = addressToFollow
+    )(client.getContext)
+
+    Seq(
+      (walletAddress, reducedIssuerBoxTx),
+      (walletAddress, followingTx.reduceTx)
+    )
+  }
+
+  def unfollow(
+    walletAddress: Address,
+    addressToUnfollow: Address
+  ): Seq[(Address, ReducedTransaction)] = {
+    val issuerBoxTx: ProfileBoxIssuerBoxTx = new ProfileBoxIssuerBoxTx(
+      userAddress = walletAddress,
+      client = client,
+      explorer = explorer,
+      addressToFollow = Option(addressToUnfollow)
+    )(client.getContext)
+    val reducedIssuerBoxTx: ReducedTransaction = issuerBoxTx.reduceTx
+    val issuerBox: InputBox =
+      issuerBoxTx.getOutBoxesAsInputBoxes(reducedIssuerBoxTx.getId).head
+
+    val unfollowTx: ProfileBoxRemoveFollowingTx =
+      new ProfileBoxRemoveFollowingTx(
+        userAddress = walletAddress,
+        client = client,
+        addressToUnfollow = addressToUnfollow,
+        txFeeBox = issuerBox
+      )(client.getContext)
+
+    Seq(
+      (walletAddress, reducedIssuerBoxTx),
+      (walletAddress, unfollowTx.reduceTx)
+    )
+  }
+}
 
 class DumDumDumHandler @Inject() (client: Client) {
 
