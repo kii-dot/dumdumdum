@@ -3,32 +3,13 @@ package runners.helpers
 import commons.ErgCommons
 import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceOwner}
 import contracts.ProfileTokenDistributionBoxContract
-import mint.{Client, NFTMinter, TweetProtocol}
-import org.ergoplatform.appkit.{
-  Address,
-  BlockchainContext,
-  BoxOperations,
-  ErgoClient,
-  ErgoId,
-  ErgoProver,
-  ErgoToken,
-  InputBox,
-  NetworkType,
-  OutBox,
-  ReducedTransaction,
-  RestApiErgoClient,
-  SecretString,
-  SignedTransaction,
-  UnsignedTransaction
-}
+import mint.{Client, NFTMinter, TweetExplorer, TweetProtocol}
+import org.ergoplatform.appkit.{Address, BlockchainContext, BoxOperations, ErgoClient, ErgoId, ErgoProver, ErgoToken, InputBox, NetworkType, OutBox, ReducedTransaction, RestApiErgoClient, SecretString, SignedTransaction, UnsignedTransaction}
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
-import profile.{CreateDumDumDumsTx, DumDumDumHandler}
+import profile.{CreateDumDumDumsTx, DumDumDumHandler, Profile, ProfileTokenDistributionBox}
 import tokens.SigUSD
 
-import scala.collection.JavaConverters.{
-  collectionAsScalaIterableConverter,
-  seqAsJavaListConverter
-}
+import scala.collection.JavaConverters.{collectionAsScalaIterableConverter, seqAsJavaListConverter}
 
 /**
   * Spender
@@ -43,8 +24,12 @@ object Spender {
     serviceOwner
   }
 
+  val followAddress: String = "9gdrGV6JFKvwcF9ntQyVn7johH8EQMxjrfm8jCzjQ8S3ccZPJEz"
+
   val tweetId: String =
     "093bdedda43c2d24e10403e170f0796ae80099f43f396e6577c4f65199b6d1c4"
+
+  val nftId: String = "322216b9606ac80a41601642707dfaa4461bcffe9ccb08f3fd59d967bdabdeb4"
 
   /**
     * 1. tweet
@@ -57,11 +42,15 @@ object Spender {
   val client = new Client
   client.setClient()
 
+  val explorer = new TweetExplorer()(client)
+
   val NFTMinter =
     new NFTMinter(client = client, tweetProtocol = new TweetProtocol(client))
 
   val DumDumDumHandler =
     new DumDumDumHandler(client = client)
+
+  val profileHandler = new Profile(client, explorer = explorer)
 
   def mint(
     ergoClient: ErgoClient,
@@ -96,12 +85,34 @@ object Spender {
       implicit ctx =>
         val createDumDumDumsTx = DumDumDumHandler.mint(
           address = Address.create(walletAddress),
-          name = "DumDumDums ProfileBox NFT",
+          name = "DumDumDums ProfileBox NFT: Official",
           description =
             "This is the token to identify the DumDumDums Profile Box. The token, I, am the decider of fate of these puny Profile Tokens, Buahahhaha.",
           amount = 1,
           optionalLink =
             "DumDumDum, I am the master token of the Profile Box Buahahaha"
+        )
+
+        createDumDumDumsTx
+    }
+
+    reducedTxs
+  }
+
+  def mintDumDumDumsProfile(
+                      ergoClient: ErgoClient,
+                      prover: ErgoProver
+                    ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val createDumDumDumsTx = DumDumDumHandler.mint(
+          address = Address.create(walletAddress),
+          name = "DumDumDums ProfileBox Token: Official",
+          description =
+            "These tokens are used to identify profile boxes in the DumDumDums system",
+          amount = Long.MaxValue - Int.MaxValue,
+          optionalLink =
+            "DumDumDum, I'm a Profile Box token :P"
         )
 
         createDumDumDumsTx
@@ -123,6 +134,40 @@ object Spender {
         )
 
         burnDumDumDumsTx
+    }
+
+    reducedTxs
+  }
+
+  def createProfile(
+                     ergoClient: ErgoClient,
+                     prover: ErgoProver
+                   ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val createProfileTx = profileHandler.create(
+          address = Address.create(walletAddress),
+          nftId = nftId
+        )
+
+        createProfileTx
+    }
+
+    reducedTxs
+  }
+
+  def follow(
+                     ergoClient: ErgoClient,
+                     prover: ErgoProver
+                   ): Seq[(Address, ReducedTransaction)] = {
+    val reducedTxs: Seq[(Address, ReducedTransaction)] = ergoClient.execute {
+      implicit ctx =>
+        val followTx = profileHandler.follow(
+          walletAddress = Address.create(walletAddress),
+          addressToFollow = Address.create(followAddress)
+        )
+
+        followTx
     }
 
     reducedTxs
@@ -166,7 +211,7 @@ object Spender {
             .head
 
         val dumdumdumsProfileTokenToken: ErgoToken =
-          dumdumdumsNFTTokenBox.getTokens.asScala.toSeq
+          dumdumdumsProfileTokenBox.getTokens.asScala.toSeq
             .filter(token =>
               token.getId == ErgoId.create(dumdumdumsProfileToken)
             )
@@ -179,21 +224,8 @@ object Spender {
             Seq(dumdumdumsNFTTokenBox)
           } else Seq(dumdumdumsProfileTokenBox, dumdumdumsNFTTokenBox)
 
-        val outBox: OutBox = ctx
-          .newTxBuilder()
-          .outBoxBuilder()
-          .value(ErgCommons.MinBoxFee)
-          .tokens(
-            dumdumdumsNFTToken,
-            dumdumdumsProfileTokenToken
-          )
-          .contract(
-            ProfileTokenDistributionBoxContract
-              .getContract(ctx)
-              .contract
-              .ergoContract
-          )
-          .build()
+        val outBox: OutBox = new ProfileTokenDistributionBox(
+          tokens = Seq(dumdumdumsNFTToken, dumdumdumsProfileTokenToken)).getOutBox(ctx, ctx.newTxBuilder())
 
         val tx: UnsignedTransaction = ctx
           .newTxBuilder()
@@ -237,11 +269,16 @@ object Spender {
 
     // Tx happens Here
     val txJsons: Seq[(Address, ReducedTransaction)] =
-      mergeDumDumDums(ergoClient, prover)
+      follow(ergoClient, prover)
     // Tx Ends Here
 
     val signed =
-      txJsons.map(tx => prover.signReduced(tx._2, 0))
+      txJsons.map(tx => {
+
+        val signTx = prover.signReduced(tx._2, 0)
+        println(s"signed ${tx._2.getId}")
+        signTx
+      })
 
     signed.map(signedTx => client.getContext.sendTransaction(signedTx))
     signed.foreach(txJson => System.out.println(txJson.toJson(true)))

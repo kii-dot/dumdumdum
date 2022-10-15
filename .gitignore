@@ -11,6 +11,7 @@ logfile
 *.log
 .DS_Store
 .g8
+/app/mint/Playground.scala
 
 # targets
 **/target

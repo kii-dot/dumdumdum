@@ -35,12 +35,19 @@ class HomeController @Inject() (
       Ok(Json.fromString("pong")).as("application/json")
   }
 
-  def getFeed: Action[Json] = Action(circe.json) {
-    implicit request: Request[Json] =>
+  def getFeed(walletAddress: String): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
       try {
-        val address: String = getRequestBodyAsString(request, "address")
+        val followingRegister = profile.getFollowing(Address.create(walletAddress))
+        val tweets = followingRegister.collAddress.flatMap(address =>
+          feed.get(address)
+        ).sortBy(tweet => tweet.creationHeight)(Ordering.Long.reverse)
 
-        Ok(Json.fromString(address)).as("application/json")
+        Ok(Json.fromFields(
+          List(
+            ("tweets", Json.fromValues(tweets.map(tweet => tweet.toJson)))
+          )
+        )).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -49,14 +56,27 @@ class HomeController @Inject() (
   def getAddressFeed(walletAddress: String): Action[AnyContent] = Action {
     implicit request: Request[AnyContent] =>
       try {
-        val tweetJson = feed.get(Address.create(walletAddress))
+        val tweets = feed.get(Address.create(walletAddress))
 
         Ok(
           Json.fromFields(
             List(
-              ("tweets", Json.fromValues(tweetJson))
+              ("tweets", Json.fromValues(tweets.map(tweet => tweet.toJson)))
             )
           )
+        ).as("application/json")
+      } catch {
+        case e: Throwable => exception(e, logger)
+      }
+  }
+
+  def getAddressFollowing(walletAddress: String): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      try {
+        val followingRegister = profile.getFollowing(Address.create(walletAddress))
+
+        Ok(
+          followingRegister.toJson
         ).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)

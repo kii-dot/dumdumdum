@@ -6,8 +6,9 @@
 # An example controller showing a sample home page
 GET     /                                   controllers.HomeController.index()
 GET     /ping                               controllers.HomeController.ping
-GET     /feed                               controllers.HomeController.getFeed
+GET     /feed/my/:walletAddress             controllers.HomeController.getFeed(walletAddress: String)
 GET     /feed/byAddress/:walletAddress      controllers.HomeController.getAddressFeed(walletAddress: String)
+GET     /profile/following/:walletAddress   controllers.HomeController.getAddressFollowing(walletAddress: String)
 POST    /tweet                              controllers.HomeController.tweet
 POST    /reply                              controllers.HomeController.reply
 POST    /retweet                            controllers.HomeController.retweet

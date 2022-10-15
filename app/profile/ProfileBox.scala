@@ -2,28 +2,11 @@ package profile
 
 import boxes.{Box, BoxWrapper, BoxWrapperHelper}
 import commons.ErgCommons
-import config.Configs.{
-  dumdumdumsNFT,
-  dumdumdumsProfileToken,
-  serviceFee,
-  serviceOwner
-}
+import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceFee, serviceOwner}
 import contracts.{ProfileBoxContract, ProfileTokenDistributionBoxContract}
-import edge.registers.{
-  AddressRegister,
-  CollAddressRegister,
-  CollStringRegister,
-  LongRegister
-}
+import edge.registers.{AddressRegister, CollAddressRegister, CollStringRegister, LongRegister}
 import mint.Client
-import org.ergoplatform.appkit.{
-  Address,
-  BlockchainContext,
-  ErgoContract,
-  ErgoId,
-  ErgoToken,
-  InputBox
-}
+import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoContract, ErgoId, ErgoToken, InputBox, NetworkType}
 import registers.Register
 import special.collection.Coll
 import tokens.TokenHelper
@@ -72,15 +55,16 @@ object ProfileBox {
       id = inputBox.getId,
       tokens = inputBox.getTokens.toSeq,
       addressRegister = new AddressRegister(
-        inputBox.getRegisters.get(0).getValue.asInstanceOf[Coll[Byte]].toArray
+        inputBox.getRegisters.get(0).getValue.asInstanceOf[Coll[Byte]].toArray,
+        networkType = NetworkType.MAINNET
       ),
       followingRegister = new CollAddressRegister(
         inputBox.getRegisters
-          .get(2)
+          .get(1)
           .getValue
           .asInstanceOf[Coll[Coll[Byte]]]
           .toArray
-          .map(collByte => Address.create(collByte.toString()))
+          .map(collByte => Address.fromPropositionBytes(NetworkType.MAINNET, collByte.toArray))
       ),
       box = Option(Box(inputBox))
     )

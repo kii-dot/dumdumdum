@@ -2,25 +2,12 @@ package profile
 
 import boxes.FundsToAddressBox
 import commons.ErgCommons
-import config.Configs.{dumdumdumsProfileToken, serviceFee}
+import config.Configs.{dumdumdumsProfileToken, serviceFee, serviceOwner}
 import contracts.ProfileBoxContract
-import edge.registers.{
-  AddressRegister,
-  CollAddressRegister,
-  CollByteRegister,
-  CollStringRegister,
-  StringRegister
-}
+import edge.registers.{AddressRegister, CollAddressRegister}
 import mint.{Client, TweetExplorer}
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.appkit.{
-  Address,
-  BlockchainContext,
-  ErgoId,
-  ErgoToken,
-  InputBox,
-  OutBox
-}
+import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoToken, InputBox, OutBox}
 import txs.Tx
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
@@ -35,11 +22,9 @@ abstract class UserProfileTx(userAddress: Address, client: Client)
 
   val profileBox: ProfileBox = ProfileBox.from(
     client
-      .getCoveringBoxesFor(
-        ProfileBoxContract.getContract(userAddress).contract.address,
-        ErgCommons.MinMinerFee
+      .getAllUnspentBox(
+        ProfileBoxContract.getContract(userAddress).contract.address
       )
-      .getBoxes
       .head
   )
 }
@@ -91,7 +76,8 @@ class ProfileBoxCreationTx(
       ProfileTokenDistributionBox
         .decrementProfileToken(profileTokenDistributionBox)
         .getOutBox(ctx, ctx.newTxBuilder()),
-      profileBox.getOutBox(ctx, ctx.newTxBuilder())
+      profileBox.getOutBox(ctx, ctx.newTxBuilder()),
+      FundsToAddressBox(address = Address.create(serviceOwner), value = serviceFee).getOutBox(ctx, ctx.newTxBuilder())
     )
   }
 }

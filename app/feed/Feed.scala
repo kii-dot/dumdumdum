@@ -10,7 +10,7 @@ import javax.inject.Inject
 
 class Feed @Inject() (client: Client, explorer: TweetExplorer) {
 
-  def get(address: Address): Seq[Json] = {
+  def get(address: Address): Seq[Tweet] = {
     val unspentBox: List[InputBox] =
       client.getAllUnspentBox(address).filter(box => !box.getTokens.isEmpty)
     val tokens = unspentBox
@@ -21,7 +21,7 @@ class Feed @Inject() (client: Client, explorer: TweetExplorer) {
     val tweets = tokens
       .flatMap(token => getTweet(token.getId.toString))
       .sortBy(tweet => tweet.creationHeight)(Ordering.Long.reverse)
-    tweets.map(tweet => tweet.toJson)
+    tweets
   }
 
   def getTweet(tokenId: String): Option[Tweet] =
