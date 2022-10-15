@@ -64,7 +64,6 @@
         //      therefore most if not all txs can't be manipulated.
         val _profileBox = OUTPUTS(1)
         val _txFeeBox = INPUTS(1)
-        val dataInputBox: Box           = CONTEXT.dataInputs(0)
 
         // Profile Distribution Box check
         val isProfileDistributionBoxAddressSame: Boolean =
@@ -91,10 +90,6 @@
             _profileBox.tokens(0)._2 == 1
         ))
 
-        val isProfileBoxNFTAdded: Boolean = allOf(Coll(
-            _profileBox.R5[Coll[Byte]].isDefined
-        ))
-
         // UserAddress added to Profile Box
         val isAddressInProfileBoxAdded: Boolean = allOf(Coll(
             _profileBox.R4[Coll[Byte]].get == _txFeeBox.propositionBytes
@@ -102,25 +97,16 @@
 
         val profileBoxCheck: Boolean = allOf(Coll(
             isProfileBoxTokenReceived,
-            isProfileBoxNFTAdded,
             isAddressInProfileBoxAdded
         ))
 
         // NFT Insert
-        val isNftDataInputBelongsToUser: Boolean =
-            dataInputBox.propositionBytes == _profileBox.R4[Coll[Byte]].get
-
-        val filteredNFTToken: Coll[(Coll[Byte], Long)] =
-            dataInputBox.tokens
-                .filter{ (token: (Coll[Byte], Long)) => token._1 == _profileBox.R5[Coll[Byte]].get}
-
-        val isNftInDataInputBox: Boolean =
-            filteredNFTToken.size >= 1
+        // if there is an nft (profile picture), there can only be one
+        val isNftInProfileBox: Boolean =
+            _profileBox.tokens.size == 2
 
         val isNftChange: Boolean = allOf(Coll(
-            isNftDataInputBelongsToUser,
-            // @todo script is failing on DataInput
-            isNftInDataInputBox
+            isNftInProfileBox
         ))
 
         // Lets add a fee so that bad actors who wants to drain the token

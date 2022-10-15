@@ -32,67 +32,131 @@
     val outProfileBox: Box  = OUTPUTS(0)
 
     // ====== Mutation ====== //
-    // Inputs: ProfileBox(0)
+    // Inputs: ProfileBox(0), UserTxBox(1) -> Contains NFT || R4 follower
     // Outputs: ProfileBox(0), MiningBox(1)
     val isProfileBoxOutput: Boolean = allOf(Coll(
         inProfileBox.tokens(0)._1 == outProfileBox.tokens(0)._1,
         inProfileBox.tokens(0)._2 == outProfileBox.tokens(0)._2,
         inProfileBox.tokens(0)._1 == _DumDumDumProfileToken,
-        inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]]
     ))
 
-    if (isProfileBoxOutput) {
-        val dataInputBox: Box           = CONTEXT.dataInputs(0)
+    val isMutation_Scenario: Boolean = isProfileBoxOutput
 
-        val isProfileBoxTokenSame: Boolean = allOf(Coll(
-            inProfileBox.tokens(0)._1 == outProfileBox.tokens(0)._1,
-            inProfileBox.tokens(0)._2 == outProfileBox.tokens(0)._2,
-            inProfileBox.tokens.size == 1,
-            outProfileBox.tokens.size == 1,
-            inProfileBox.tokens(0)._1 == _DumDumDumProfileToken,
-            inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]]
-        ))
-
+    if (isMutation_Scenario) {
         val isProfileBoxValueSame: Boolean =
             inProfileBox.value == outProfileBox.value
 
         val isProfileBoxAddressSame: Boolean =
             inProfileBox.propositionBytes == outProfileBox.propositionBytes
 
+        val isProfileBoxReplicated: Boolean = allOf(Coll(
+            isProfileBoxOutput,
+            inProfileBox.R4[Coll[Byte]] == outProfileBox.R4[Coll[Byte]],
+            inProfileBox.tokens.size <= 2,
+            outProfileBox.tokens.size <= 2,
+            isProfileBoxAddressSame,
+            isProfileBoxValueSame
+        ))
+
         // NFT Change
-        val isNftDataInputBelongsToUser: Boolean =
-            dataInputBox.propositionBytes == inProfileBox.R4[Coll[Byte]].get
+        val userTxBox: Box = INPUTS(1)
+        val userOutBox: Box = OUTPUTS(1)
+        val isNFTCheck: Boolean = allOf(Coll(
+            outProfileBox.tokens.size <= 2,
+            outProfileBox.tokens.size > 0,
+            if (userTxBox.tokens.size > 0) {
+                allOf(Coll(
+                    outProfileBox.tokens(1)._1 == userTxBox.tokens(0)._1,
+                    outProfileBox.tokens(1)._2 == userTxBox.tokens(0)._2,
+                    userOutBox.tokens(0)._1 == inProfileBox.tokens(1)._1,
+                    userOutBox.tokens(0)._2 == inProfileBox.tokens(1)._2,
+                    userOutBox.propositionBytes == inProfileBox.R4[Coll[Byte]].get
+                ))
+            } else {
+                allOf(Coll(
+                    outProfileBox.tokens(1)._1 == inProfileBox.tokens(1)._1,
+                    outProfileBox.tokens(1)._2 == inProfileBox.tokens(1)._2
+                ))
+            },
+        ))
 
-        val filteredNFTToken: Coll[(Coll[Byte], Long)] =
-            dataInputBox.tokens
-                .filter{ (token: (Coll[Byte], Long)) => token._1 == outProfileBox.R5[Coll[Byte]].get}
+        // Follower check
+        // If already exists, remove
+        // if not, add
+        // We need this hack else it will always fail if undefined
+        val isUserBoxFollowerIsUser: Boolean =
+            userTxBox.R4[Coll[Byte]].isDefined &&
+            userTxBox.R4[Coll[Byte]].get == inProfileBox.R4[Coll[Byte]].get
 
-        val isNftInDataInputBox: Boolean =
-            filteredNFTToken.size == 1
+        val isFollowerCheck: Boolean = allOf(Coll(
+            if (isUserBoxFollowerIsUser) {
+                allOf(Coll(
+                    inProfileBox.R5[Coll[Coll[Byte]]] == outProfileBox.R5[Coll[Coll[Byte]]],
+                ))
+            } else {
+                // Check if the address already exists
+                val isAddressExistsInInput: Boolean =
+                    inProfileBox.R5[Coll[Coll[Byte]]].get.exists{
+                        (address: Coll[Byte]) => address == userTxBox.R4[Coll[Byte]].get
+                    }
 
-        val isNftChange: Boolean = allOf(Coll(
-            isNftDataInputBelongsToUser,
-            isNftInDataInputBox
+                val isAddressExistsInOutput: Boolean =
+                    outProfileBox.R5[Coll[Coll[Byte]]].get.exists{
+                        (address: Coll[Byte]) => address == userTxBox.R4[Coll[Byte]].get
+                    }
+
+                if (!isAddressExistsInInput)
+                {
+                    allOf(Coll(
+                        // Add the address, Check if outBox has the address
+                        isAddressExistsInOutput
+                    ))
+                } else {
+                    allOf(Coll(
+                        // remove the address, Check if outBox has the address
+                        !isAddressExistsInOutput
+                    ))
+                }
+            }
         ))
 
         sigmaProp(allOf(
             Coll(
                 _OwnerPK,
-                anyOf(Coll(
-                    isNftChange,
-                    inProfileBox.R6[Coll[Coll[Byte]]] == outProfileBox.R6[Coll[Coll[Byte]]]
-                )),
-                isProfileBoxTokenSame,
-                isProfileBoxValueSame,
-                isProfileBoxAddressSame
+                isNFTCheck,
+                isFollowerCheck,
+                isProfileBoxReplicated,
             )
         ))
-    } else if (OUTPUTS.size == 1) {
-        // ====== Deletion ====== //
-        // Inputs: ProfileBox(0)
-        // Outputs: MiningBox(0)
-        _OwnerPK
     } else {
-        sigmaProp(false)
+        // ======== Delete Profile ========
+        // Conditions:
+        // 1. dumDumDum tokens does not exist
+        // 2. NFT goes back to owner
+        // 3. ProfileBox does not exist
+        val ownerBox: Box = OUTPUTS(0)
+        val profileBox: Box = INPUTS(0)
+
+        val isNFTReturned: Boolean = allOf(Coll(
+            ownerBox.propositionBytes == profileBox.R4[Coll[Byte]].get,
+            if (profileBox.tokens.size == 2) {
+                allOf(Coll(
+                    ownerBox.tokens.size == 1,
+                    ownerBox.tokens(0)._1 == profileBox.tokens(1)._1,
+                    ownerBox.tokens(0)._2 == profileBox.tokens(1)._2,
+                ))
+            } else {
+                ownerBox.tokens.size == 0
+            }
+        ))
+
+        // Inputs: ProfileBox(0), TxFee(1) -> To get the nft back
+        // Outputs: OwnerBox(0) -> With NFT, MiningFee(1)
+        sigmaProp(allOf(
+            Coll(
+                _OwnerPK,
+                isNFTReturned
+            )
+        ))
     }
 }

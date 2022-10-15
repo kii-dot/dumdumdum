@@ -1,24 +1,12 @@
 package profile
 
 import commons.ErgCommons
-import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken}
+import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceFee}
 import contracts.ProfileBoxContract
-import edge.registers.{
-  AddressRegister,
-  CollByteRegister,
-  CollStringRegister,
-  StringRegister
-}
+import edge.registers.{AddressRegister, CollAddressRegister, CollByteRegister, CollStringRegister, StringRegister}
 import mint.{Client, TweetExplorer}
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.appkit.{
-  Address,
-  BlockchainContext,
-  ErgoId,
-  ErgoToken,
-  InputBox,
-  OutBox
-}
+import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoId, ErgoToken, InputBox, OutBox}
 import txs.Tx
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
@@ -55,16 +43,14 @@ class ProfileBoxCreationTx(
   override val inputBoxes: Seq[InputBox] = {
     val txFeeFromUser: Seq[InputBox] =
       client
-        .getCoveringBoxesFor(userAddress, ErgCommons.MinMinerFee * 2)
-        .getBoxes
+        .getCoveringBoxesFor(
+          userAddress,
+          ErgCommons.MinMinerFee * 2 + serviceFee,
+          Seq(new ErgoToken(nftId, 1)).asJava
+        )
         .toSeq
 
     Seq(profileTokenDistributionBox) ++ txFeeFromUser
-  }
-
-  override val dataInputs: Seq[InputBox] = {
-    val nftBox: InputBox = NFTHelper.getNFTInputBox(nftId)(explorer, ctx)
-    Seq(nftBox)
   }
 
   override def getOutBoxes: Seq[OutBox] = {
@@ -74,10 +60,10 @@ class ProfileBoxCreationTx(
       )
 
     val profileBox: ProfileBox = ProfileBox(
+      tokens =
+        Seq(new ErgoToken(dumdumdumsProfileToken, 1), new ErgoToken(nftId, 1)),
       addressRegister = new AddressRegister(userAddress),
-      profilePictureRegister =
-        new CollByteRegister(ErgoId.create(nftId).getBytes),
-      followingRegister = CollStringRegister.empty
+      followingRegister = CollAddressRegister.empty
     )
 
     Seq(
@@ -108,24 +94,28 @@ class ProfileBoxChangeProfileNFTTx(
     val profileInputBox: InputBox = ProfileBox.get(userAddress)(client)
     val txFeeFromUser: Seq[InputBox] =
       client
-        .getCoveringBoxesFor(userAddress, ErgCommons.MinMinerFee * 2)
-        .getBoxes
-        .toSeq
+        .getCoveringBoxesFor(
+          userAddress,
+          ErgCommons.MinMinerFee * 2,
+          Seq(new ErgoToken(nftId, 1)).asJava
+        )
 
     Seq(profileInputBox) ++ txFeeFromUser
   }
 
-  override val dataInputs: Seq[InputBox] = {
-    val nftBox: InputBox = NFTHelper.getNFTInputBox(nftId)(explorer, ctx)
-    Seq(nftBox)
-  }
-
   override def getOutBoxes: Seq[OutBox] = {
     val profileBox: ProfileBox =
-      ProfileBox.from(ProfileBox.get(userAddress)(client))
+      ProfileBox
+        .from(ProfileBox.get(userAddress)(client))
+        .copy(
+          tokens = Seq(
+            new ErgoToken(dumdumdumsProfileToken, 1),
+            new ErgoToken(nftId, 1)
+          )
+        )
 
     Seq(
-      ProfileBox.changeNFT(profileBox, nftId).getOutBox(ctx, ctx.newTxBuilder())
+      profileBox.getOutBox(ctx, ctx.newTxBuilder())
     )
   }
 }

@@ -1,7 +1,7 @@
 package contracts
 
 import config.Configs.dumdumdumsProfileToken
-import org.ergoplatform.appkit.{Address, BlockchainContext}
+import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoId}
 
 case class ProfileBoxContract(contract: Contract, ownerPk: Address)
 
@@ -14,7 +14,7 @@ object ProfileBoxContract {
       (ProfileBoxContractConstants.ownerPk, ownerPk.getPublicKey),
       (
         ProfileBoxContractConstants.dumdumdumProfileToken,
-        dumdumdumsProfileToken.getBytes()
+        ErgoId.create(dumdumdumsProfileToken).getBytes
       )
     )
 
