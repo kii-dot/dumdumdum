@@ -233,6 +233,10 @@ Get Following
 
 
 ## Next Step
+The current code is usable if you can use ergo_config.json to sign txs. However this app is designed to be called as an api. Therefore it needs to be implemented with a front end where nautilus can sign the reduced txs. The skills to develop that has not been attained by the current developer, and therefore this will be a work in progress. However! There is a mock web ui that was semi built, and this is a screen shot.
+![UI](images/ui.png)
+
+Next step for real for real:
 1. Publish Package
 2. Dockerize app
 3. Build a command line to sign Tx so that users can start using
