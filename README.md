@@ -165,8 +165,8 @@ docker compose up
 or if you want the exact commands for cloning and running it
 
 ```bash
-git clone https://github.com/kii-dot/ergo-twitter
-cd ergo-twitter
+git clone https://github.com/kii-dot/dumdumdum
+cd dumdumdum
 docker compose up
 ```
 
