@@ -72,20 +72,59 @@ To curb this problem, what we have is a contract where only the user can spend i
 
 ### Box Design
 
-| Registers | Description | Example |
-| --- | --- | --- |
-| R4 | User Address | Imagine a random wallet address |
-| R5 | Following (Coll[Coll[Byte]]) | [Imagine a random wallet address, and another one, and another one] |
+#### Profile Box
+A profile box contains all the necessary information to retrieve a users profile. Such as profile photo (nft) and the addresses that they follow.
+
+
 
 **Value** → MinFee (0.0001 E)
 
 **Tokens**
 
-DumDumDum Profile Token →
-
+1. DumDumDum Profile Token →
 id:`07a02cfa15f30a4be5e76eb547b1c612543d25201559cebdc4f6c47d717c2fd5`
-
 amount: 1
+
+2. NFT ->
+id: `nft id`
+amount: 1
+
+| Registers | Description | Type             |
+| --- | --- |------------------|
+| R4 | User Address | Coll[Byte]       |
+| R5 | Following | Coll[Coll[Byte]] |
+
+**Tx Flow**
+
+1. Adding/Removing Following
+2. Change Profile Picture
+
+**Contract Script**
+
+Profile Box
+
+[https://github.com/kii-dot/ergo-twitter-scala/blob/main/conf/contracts/Profile/BoxGuardScripts/ProfileBox.es](https://github.com/kii-dot/ergo-twitter-scala/blob/main/conf/contracts/Profile/BoxGuardScripts/ProfileBox.es)
+
+
+#### Profile Token Distribution box
+A profile token distribution box is a controlled box that allows Profile Box to be created in a controlled manner and also provide identification tokens for profile boxes.
+
+**Value** → MinFee (0.0001 E)
+
+**Tokens**
+
+1. DumDumDum Profile Token Distributor NFT →
+   id:`04df95031c1b31758cd64f02335eb18d756cc05be487898ced30d0b06de6398e`
+   amount: 1
+
+2. DumDumDum Profile Token ->
+   id: `07a02cfa15f30a4be5e76eb547b1c612543d25201559cebdc4f6c47d717c2fd5`
+   amount: Infinite (not really but kinda)
+
+| Registers | Description    | Type       |
+| --- |----------------|------------|
+| R4 | Service Fee    | Long       |
+| R5 | Service Owner  | Coll[Byte] |
 
 **Contract Conditions**
 
@@ -94,13 +133,8 @@ amount: 1
 
 **Contract Script**
 
-Profile Token Distribution box
-
 [https://github.com/kii-dot/ergo-twitter-scala/blob/main/conf/contracts/Profile/BoxGuardScripts/ProfileTokenDistributionBox.es](https://github.com/kii-dot/ergo-twitter-scala/blob/main/conf/contracts/Profile/BoxGuardScripts/ProfileTokenDistributionBox.es)
 
-Profile Box
-
-[https://github.com/kii-dot/ergo-twitter-scala/blob/main/conf/contracts/Profile/BoxGuardScripts/ProfileBox.es](https://github.com/kii-dot/ergo-twitter-scala/blob/main/conf/contracts/Profile/BoxGuardScripts/ProfileBox.es)
 
 **Tx Flow**
 
