@@ -2,12 +2,10 @@ package runners.helpers
 
 import commons.ErgCommons
 import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceOwner}
-import contracts.ProfileTokenDistributionBoxContract
 import mint.{Client, NFTMinter, TweetExplorer, TweetProtocol}
-import org.ergoplatform.appkit.{Address, BlockchainContext, BoxOperations, ErgoClient, ErgoId, ErgoProver, ErgoToken, InputBox, NetworkType, OutBox, ReducedTransaction, RestApiErgoClient, SecretString, SignedTransaction, UnsignedTransaction}
+import org.ergoplatform.appkit.{Address, BoxOperations, ErgoClient, ErgoId, ErgoProver, ErgoToken, InputBox, NetworkType, OutBox, ReducedTransaction, RestApiErgoClient, SecretString, SignedTransaction, UnsignedTransaction}
 import org.ergoplatform.appkit.config.{ErgoNodeConfig, ErgoToolConfig}
-import profile.{CreateDumDumDumsTx, DumDumDumHandler, Profile, ProfileTokenDistributionBox}
-import tokens.SigUSD
+import profile.{DumDumDumHandler, Profile, ProfileTokenDistributionBox}
 
 import scala.collection.JavaConverters.{collectionAsScalaIterableConverter, seqAsJavaListConverter}
 
