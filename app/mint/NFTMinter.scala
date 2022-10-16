@@ -3,18 +3,9 @@ package mint
 import boxes.{Box, BoxWrapper}
 import registers.Register
 import commons.ErgCommons
+import edge.registers.{CollByteRegister, StringRegister}
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.appkit.{
-  Address,
-  BlockchainContext,
-  Eip4Token,
-  ErgoContract,
-  ErgoId,
-  ErgoToken,
-  InputBox,
-  OutBox,
-  ReducedTransaction
-}
+import org.ergoplatform.appkit.{Address, BlockchainContext, Eip4Token, ErgoContract, ErgoId, ErgoToken, InputBox, OutBox, ReducedTransaction}
 import txs.Tx
 
 import java.security.MessageDigest
@@ -270,4 +261,22 @@ object TweetAction {
   def post: (Int, String) = (0, "")
   def reply(tweetId: String): (Int, String) = (1, tweetId)
   def retweet(tweetId: String): (Int, String) = (2, tweetId)
+}
+
+case class NFT(
+                tokenId: ErgoId,
+                R4: StringRegister,
+                R5: StringRegister,
+                R6: StringRegister,
+                R7: CollByteRegister,
+                R8: StringRegister,
+                R9: StringRegister
+              )
+{
+  def name: String = R4.str
+  def description: String = R5.str
+  def decimals: String = R6.str
+  def nftType: Array[Byte] = R7.value
+  def hashOfFile: String = R8.str
+  def linkToArtwork: String = R9.str
 }

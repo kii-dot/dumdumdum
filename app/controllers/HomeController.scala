@@ -35,6 +35,15 @@ class HomeController @Inject() (
       Ok(Json.fromString("pong")).as("application/json")
   }
 
+  def getProfile(walletAddress: String): Action[AnyContent] = Action {
+    implicit request: Request[AnyContent] =>
+      try {
+        Ok("to be implemented").as("application/json")
+      } catch {
+        case e: Throwable => exception(e, logger)
+      }
+  }
+
   def getFeed(walletAddress: String): Action[AnyContent] = Action {
     implicit request: Request[AnyContent] =>
       try {

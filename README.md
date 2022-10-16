@@ -135,6 +135,19 @@ Profile Box
 | PUT | /unfollow | unfollow a wallet address | {addressToUnfollow: String, walletAddress: String} | Done |
 | GET | /follow/{walletAddress} | get all address that you follow | empty | Done |
 
+## Minting Tx Examples
+Minting Tweet:
+[Mint Tweet Tx](https://explorer.ergoplatform.com/en/transactions/e3fe602f5f882858fc4f6bc684136f1d7fc130a5c7890eec5578127c9d961577)
+
+Delete Tweet:
+[Delete Tweet Tx](https://explorer.ergoplatform.com/en/transactions/24d22c29a11298c95a55f687e5dd321feb6eb4d5d64be203ff7f26564e8e5d85)
+
+Create Profile:
+[Create Profile Tx with NFT Locked](https://explorer.ergoplatform.com/en/transactions/419689ed9e48ad7127ab7be5338c913e7060a51c05af6edd4b83416c4936734f)
+
+Add Following Address:
+[Add Following Address Tx](https://explorer.ergoplatform.com/en/transactions/7f16deb498621afdc17533c9a93bafa89d811acdd4c92b687b99588def2c270e)
+
 ## Utilizing Docker Hub
 
 There are many reasons why Twitter has to have their own servers to host the site and for us to call their servers to utilize the app. However, we can negate all of that, just by introducing blockchain into the play. 
@@ -188,8 +201,8 @@ Get Following
 - [x]  Profile Box Design
 - [x]  Profile Box Contracts
 - [x]  Profile Box Backend
-- [ ]  Publish Required Package
-- [ ]  Dockerized App
+- [ ]  Publish Required Package (Issue with signing on machine. Can't publish.)
+- [ ]  Dockerized App (Need to have above packaged to be published in SONAType to be able to dockerize. However the docker files have been written)
 - [ ]  Front end
     - [ ]  Command Prompt App to sign Txs
     
@@ -217,3 +230,10 @@ Get Following
 - [ ]  UI Page
 - [ ]  UI wallet connect
 - [ ]  Tweetable
+
+
+## Next Step
+1. Publish Package
+2. Dockerize app
+3. Build a command line to sign Tx so that users can start using
+4. Build downloadable frontend UI
