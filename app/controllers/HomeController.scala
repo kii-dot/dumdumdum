@@ -5,7 +5,7 @@ import errors.ExceptionThrowable
 import feed.Feed
 import io.circe.Json
 import io.circe.syntax.EncoderOps
-import mint.{Client, NFTMinter}
+import mint.{Client, NFT, NFTMinter}
 import org.ergoplatform.appkit.{Address, ReducedTransaction}
 import play.api.libs.circe.Circe
 import play.api.Logger
@@ -38,7 +38,13 @@ class HomeController @Inject() (
   def getProfile(walletAddress: String): Action[AnyContent] = Action {
     implicit request: Request[AnyContent] =>
       try {
-        Ok("to be implemented").as("application/json")
+        val nft: NFT = profile.getProfileNFTDetails(address = Address.create(walletAddress))
+        val followingRegister = profile.getFollowing(Address.create(walletAddress))
+
+        Ok(Json.fromFields(List(
+          ("profileNFT", nft.toJson),
+          ("following", followingRegister.toJson)
+        ))).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }

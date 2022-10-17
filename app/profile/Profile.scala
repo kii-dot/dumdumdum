@@ -5,7 +5,7 @@ import commons.ErgCommons
 import contracts.ProfileBoxContract
 import edge.registers.CollAddressRegister
 import io.circe.Json
-import mint.{Client, CreateIssuerBoxTx, TweetExplorer}
+import mint.{Client, CreateIssuerBoxTx, NFT, TweetExplorer}
 import org.ergoplatform.P2PKAddress
 import org.ergoplatform.appkit.{Address, BlockchainContext, Eip4Token, ErgoContract, ErgoId, ErgoToken, InputBox, OutBox, ReducedTransaction}
 import registers.Register
@@ -140,6 +140,12 @@ class Profile @Inject() (client: Client, explorer: TweetExplorer) {
     val profileBox: ProfileBox = ProfileBox.from(profileInputBox)
 
     profileBox.followingRegister
+  }
+
+  def getProfileNFTDetails(address: Address): NFT = {
+    val profileBox: ProfileBox = explorer.getProfileBox(address)
+    val nft: NFT = explorer.getNFTBox(profileBox.tokens(1).getId)
+    nft
   }
 }
 

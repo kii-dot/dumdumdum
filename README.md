@@ -154,20 +154,21 @@ A profile token distribution box is a controlled box that allows Profile Box to 
 
 ## API Routes
 
-| Request Type | Route | Function | Body | Implemented |
-| --- | --- | --- | --- | --- |
-| GET | /feed | get feed | {address: String} | Done |
-| GET | /feed/byAddress/{walletAddress} | get address feed | empty | Done |
-| POST | /tweet | make a tweet | {message: String, walletAddress: String} | Done |
-| POST | /reply | reply to a tweet | {message: String, tweetId: String, walletAddress: String} | Done |
-| POST | /retweet | retweet a tweet | {message: String, tweetId: String, walletAddress: String} | Done |
-| DELETE | /delete/{tweet_id} | delete a tweet (burn) | empty | Done |
-| POST | /profile | create a profile | {nftId: String, address: String} | Done |
-| DELETE | /profile | delete a profile | {address: String} | Done |
-| PUT | /profile | change profile photo | {nftId: String, address: String} | Done |
-| PUT | /follow | follow a wallet address | {addressToFollow: String, walletAddress: String} | Done |
-| PUT | /unfollow | unfollow a wallet address | {addressToUnfollow: String, walletAddress: String} | Done |
-| GET | /follow/{walletAddress} | get all address that you follow | empty | Done |
+| Request Type | Route                           | Function | Body | Implemented |
+|--------------|---------------------------------| --- | -- | --- |
+| GET          | /feed                           | get feed | {address: String} | Done |
+| GET          | /feed/byAddress/{walletAddress} | get address feed | empty | Done |
+| POST         | /tweet                          | make a tweet | {message: String, walletAddress: String} | Done |
+| POST         | /reply                          | reply to a tweet | {message: String, tweetId: String, walletAddress: String} | Done |
+| POST         | /retweet                        | retweet a tweet | {message: String, tweetId: String, walletAddress: String} | Done |
+| DELETE       | /delete/{tweet_id}              | delete a tweet (burn) | empty | Done |
+| POST         | /profile                        | create a profile | {nftId: String, address: String} | Done |
+| DELETE       | /profile                        | delete a profile | {address: String} | Done |
+| GET          | /profile/{walletAddress}        | get profile details | empty | Done |
+| PUT          | /profile                        | change profile photo | {nftId: String, address: String} | Done |
+| PUT          | /follow                         | follow a wallet address | {addressToFollow: String, walletAddress: String} | Done |
+| PUT          | /unfollow                       | unfollow a wallet address | {addressToUnfollow: String, walletAddress: String} | Done |
+| GET          | /follow/{walletAddress}         | get all address that you follow | empty | Done |
 
 ## Minting Tx Examples
 Minting Tweet:

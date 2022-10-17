@@ -4,6 +4,8 @@ import boxes.{Box, BoxWrapper}
 import registers.Register
 import commons.ErgCommons
 import edge.registers.{CollByteRegister, StringRegister}
+import io.circe.Json
+import json.{ErgoJson, Register, RegisterType}
 import org.ergoplatform.P2PKAddress
 import org.ergoplatform.appkit.{Address, BlockchainContext, Eip4Token, ErgoContract, ErgoId, ErgoToken, InputBox, OutBox, ReducedTransaction}
 import txs.Tx
@@ -279,4 +281,51 @@ case class NFT(
   def nftType: Array[Byte] = R7.value
   def hashOfFile: String = R8.str
   def linkToArtwork: String = R9.str
+
+  def toJson: Json = {
+    Json.fromFields(
+      List(
+        ("name", Json.fromString(name)),
+        ("description", Json.fromString(description)),
+        ("decimals", Json.fromString(decimals)),
+        ("nftType", Json.fromString(nftType.mkString("Array(", ", ", ")"))),
+        ("hashOfFile", Json.fromString(hashOfFile)),
+        ("linkToArtwork", Json.fromString(linkToArtwork)),
+      )
+    )
+  }
+}
+
+object NFT {
+  def from(json: Json): NFT = {
+    val additionalRegistersJson: Json = json.hcursor.downField("additionalRegisters").as[Json].getOrElse(null)
+
+    NFT(
+      tokenId = ErgoId.create(json.hcursor.downField("boxId").as[String].getOrElse("")),
+      R4 = new StringRegister(ErgoJson.getRegister(
+        registersJson = additionalRegistersJson,
+        register = Register.R4,
+        getType = RegisterType.CollByte).get.asInstanceOf[Array[Byte]]),
+      R5 = new StringRegister(ErgoJson.getRegister(
+        registersJson = additionalRegistersJson,
+        register = Register.R5,
+        getType = RegisterType.CollByte).get.asInstanceOf[Array[Byte]]),
+      R6 = new StringRegister(ErgoJson.getRegister(
+        registersJson = additionalRegistersJson,
+        register = Register.R6,
+        getType = RegisterType.CollByte).get.asInstanceOf[Array[Byte]]),
+      R7 = new CollByteRegister(ErgoJson.getRegister(
+        registersJson = additionalRegistersJson,
+        register = Register.R7,
+        getType = RegisterType.CollByte).get.asInstanceOf[Array[Byte]]),
+      R8 = new StringRegister(ErgoJson.getRegister(
+        registersJson = additionalRegistersJson,
+        register = Register.R8,
+        getType = RegisterType.CollByte).get.asInstanceOf[Array[Byte]]),
+      R9 = new StringRegister(ErgoJson.getRegister(
+        registersJson = additionalRegistersJson,
+        register = Register.R9,
+        getType = RegisterType.CollByte).get.asInstanceOf[Array[Byte]])
+    )
+  }
 }
