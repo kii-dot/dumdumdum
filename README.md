@@ -1,5 +1,32 @@
 # DumDumDum (Ergo Twitter)
 
+In conjunction with ErgoHack V: Mining and minting, we decided to work on the category of minting by designing a “twitter” on top of the ergo blockchain that allows user to own their tweets. This protocol will heavily use the minting mechanism of Ergo Blockchain and essentially is a minting machine. Some changes will be proposed to the NFT EIP-4 to add in a new section for tweets.
+
+Not only that, this dApp will include a profile on chain which “forces” users to use NFTs that they own as their profile picture and allow users to follow other users. These are all done via existing functions or smart contracts. Let’s get started.
+
+### Vision
+A system that allows users to “own” their voice.
+
+### Goal
+A system that allows users to mint their tweets on chain and that they own their own tweets.
+
+### Milestone
+#### Completed
+1.	Tweet Minter
+2.	Tweet Burner
+3.	Profile Box for creation of Profile
+4.	Tweet feed for: a. Wallet Address b. All followings
+5.	Routes implemented
+6.	Profile Info (NFT and following) retrieval
+7.	Profile Box modifiable
+
+#### To be worked on
+1.	Publish a required package
+2.	Completion of Dockerization of App (blocked by #1)
+3.	UI Ideas
+
+## Executive Summary
+
 Twitter has been known to be a place where people share a tweet of the length of 120 words. Something succinct where it acts as a form of timestamp of a persons words on the internet.
 
 However, Twitter is a centralized entity, and at the end of the day, what you say are technically controlled by that entity. It begs the questions of the amount of liberty that you truly have with the words you posted. And whether you actually own the words. 
@@ -21,7 +48,7 @@ To create twitter on Ergo Blockchain?
 
 Design a tweet protocol.
 
-### But kii, what about the profile photo and the username. That’s the most exciting part.
+### But kii, what about the username. That’s the most exciting part.
 
 We’ll have to see what happens with this. Maybe ErgoNames can collaborate and add the username? Who knows. But let’s focus on getting the tweet done.
 
@@ -276,3 +303,6 @@ Next step for real for real:
 2. Dockerize app
 3. Build a command line to sign Tx so that users can start using
 4. Build downloadable frontend UI
+
+## What does the Future hold?
+Though starting off as a twitter clone. This is way more than just a twitter clone. This can be used for many other applications. In fact, this can give a voice to each wallet address. Allow addresses/users to post more than just a tweet, maybe a forum post or comments or reply. There's so much that this can hold, partially because there is technically not a 120 words limit, rather a roughly 3k character limit. That's in between 428 and 750 words. Which is enough to provide sufficient thought processes in a very succinct manner. It opens the door to on-chain publishing of sorts. Patent of ideas. Who knows. But one thing we know for sure, that DumDumDum is a cool ass name.
