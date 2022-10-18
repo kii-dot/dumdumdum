@@ -1,6 +1,5 @@
 name := """dumdumdum"""
 organization := "io.github.kiidot"
-
 version := "1.0-SNAPSHOT"
 
 lazy val NexusReleases = "Sonatype Releases".at(
