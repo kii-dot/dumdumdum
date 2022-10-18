@@ -6,10 +6,12 @@ Not only that, this dApp will include a profile on chain which “forces” user
 
 ## Quick Run Guide (if you have DockerHub)
 
+Run these commands to spin up the server
 ```shell
 docker pull kiidot/dumdumdum:latest
 docker run -p 9000:9000 kiidot/dumdumdum
 ```
+Currently, this server only exposes the API routes. You can run all the routes stated in [API Routes](https://github.com/kii-dot/dumdumdum#api-routes) with the required parameters and receive an ergopay response. This ergopay response has the reduced tx bytes. So... if you have the skills to write a quick app and sign the reduced tx bytes, you'll be able to mint your tweets!
 
 ### Vision
 A system that allows users to “own” their voice.
