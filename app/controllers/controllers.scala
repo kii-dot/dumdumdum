@@ -1,7 +1,20 @@
+import edge.pay.ErgoPayResponse
 import io.circe.Json
+import org.ergoplatform.appkit.{Address, ReducedTransaction}
 import play.api.mvc.{AnyContent, Request}
 
 package object controllers {
+
+  def getErgoPayResponse(
+    tweet: ((Address, ReducedTransaction), Int),
+    message: String
+  ): ErgoPayResponse =
+    ErgoPayResponse.getResponse(
+      recipient = tweet._1._1,
+      reducedTx = tweet._1._2,
+      message = s"${tweet._2} Tweet: $message",
+      replyTo = tweet._1._1.toString
+    )
 
   def getRequestHeaderAsString(
     request: Request[AnyContent],

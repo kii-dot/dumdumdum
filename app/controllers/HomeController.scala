@@ -121,14 +121,8 @@ class HomeController @Inject() (
             address = walletAddress
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = tweetTx.map(tweet =>
-          ErgoPayResponse.getResponse(
-            recipient = tweet._1,
-            reducedTx = tweet._2,
-            message = s"Tweet: ${message}",
-            replyTo = walletAddress
-          )
-        )
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          tweetTx.zipWithIndex.map(tweet => getErgoPayResponse(tweet, message))
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -151,14 +145,8 @@ class HomeController @Inject() (
             address = walletAddress
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = tweetTx.map(tweet =>
-          ErgoPayResponse.getResponse(
-            recipient = tweet._1,
-            reducedTx = tweet._2,
-            message = s"Tweet: ${message}",
-            replyTo = walletAddress
-          )
-        )
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          tweetTx.zipWithIndex.map(tweet => getErgoPayResponse(tweet, message))
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -181,14 +169,8 @@ class HomeController @Inject() (
             address = walletAddress
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = tweetTx.map(tweet =>
-          ErgoPayResponse.getResponse(
-            recipient = tweet._1,
-            reducedTx = tweet._2,
-            message = s"Tweet: ${message}",
-            replyTo = walletAddress
-          )
-        )
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          tweetTx.zipWithIndex.map(tweet => getErgoPayResponse(tweet, message))
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -196,7 +178,7 @@ class HomeController @Inject() (
       }
   }
 
-  def deleteTweet(tweetId: String): Action[Json] = Action(circe.json) {
+  def deleteTweet(): Action[Json] = Action(circe.json) {
     implicit request: Request[Json] =>
       try {
         val tweetId: String = getRequestBodyAsString(request, "tweetId")
@@ -209,14 +191,10 @@ class HomeController @Inject() (
             address = walletAddress
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = tweetTx.map(tweet =>
-          ErgoPayResponse.getResponse(
-            recipient = tweet._1,
-            reducedTx = tweet._2,
-            message = s"Tweet: burning ${tweetId}",
-            replyTo = walletAddress
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          tweetTx.zipWithIndex.map(tweet =>
+            getErgoPayResponse(tweet, "Deleting Tweet")
           )
-        )
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -235,14 +213,10 @@ class HomeController @Inject() (
             nftId = nftId
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = createProfileTx.map(tx =>
-          ErgoPayResponse.getResponse(
-            recipient = tx._1,
-            reducedTx = tx._2,
-            message = "DumDumDum: Create Profile",
-            replyTo = address
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          createProfileTx.zipWithIndex.map(tx =>
+            getErgoPayResponse(tx, "DumDumDum: Creating Profile")
           )
-        )
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -250,7 +224,7 @@ class HomeController @Inject() (
       }
   }
 
-  def deleteProfile: Action[Json] = Action(circe.json) {
+  def deleteProfile(): Action[Json] = Action(circe.json) {
     implicit request: Request[Json] =>
       try {
         val address: String = getRequestBodyAsString(request, "address")
@@ -260,14 +234,10 @@ class HomeController @Inject() (
             address = Address.create(address)
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = deleteProfileTx.map(tx =>
-          ErgoPayResponse.getResponse(
-            recipient = tx._1,
-            reducedTx = tx._2,
-            message = "DumDumDum: Delete Profile",
-            replyTo = address
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          deleteProfileTx.zipWithIndex.map(tx =>
+            getErgoPayResponse(tx, "DumDumDum: Delete Profile")
           )
-        )
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -287,14 +257,10 @@ class HomeController @Inject() (
             nftId = nftId
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = changeProfileNFTTx.map(tx =>
-          ErgoPayResponse.getResponse(
-            recipient = tx._1,
-            reducedTx = tx._2,
-            message = "DumDumDum: Delete Profile",
-            replyTo = address
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          changeProfileNFTTx.zipWithIndex.map(tx =>
+            getErgoPayResponse(tx, "DumDumDum: Changing Profile NFT")
           )
-        )
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -316,14 +282,10 @@ class HomeController @Inject() (
             addressToFollow = Address.create(addressToFollow)
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = followTx.map(tx =>
-          ErgoPayResponse.getResponse(
-            recipient = tx._1,
-            reducedTx = tx._2,
-            message = "DumDumDum: Delete Profile",
-            replyTo = walletAddress
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          followTx.zipWithIndex.map(tx =>
+            getErgoPayResponse(tx, s"DumDumDum: Following ${addressToFollow}")
           )
-        )
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
@@ -345,14 +307,13 @@ class HomeController @Inject() (
             addressToUnfollow = Address.create(addressToUnfollow)
           )
 
-        val ergoPayResponse: Seq[ErgoPayResponse] = unfollowTx.map(tx =>
-          ErgoPayResponse.getResponse(
-            recipient = tx._1,
-            reducedTx = tx._2,
-            message = "DumDumDum: Delete Profile",
-            replyTo = walletAddress
+        val ergoPayResponse: Seq[ErgoPayResponse] =
+          unfollowTx.zipWithIndex.map(tx =>
+            getErgoPayResponse(
+              tx,
+              s"DumDumDum: Unfollowing ${addressToUnfollow}"
+            )
           )
-        )
 
         Ok(ergoPayResponse.asJson).as("application/json")
       } catch {
