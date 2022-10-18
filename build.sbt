@@ -1,5 +1,5 @@
 name := """dumdumdum"""
-organization := "com.example"
+organization := "io.github.kiidot"
 
 version := "1.0-SNAPSHOT"
 
