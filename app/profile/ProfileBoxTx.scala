@@ -7,7 +7,13 @@ import contracts.ProfileBoxContract
 import edge.registers.{AddressRegister, CollAddressRegister}
 import mint.{Client, TweetExplorer}
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoToken, InputBox, OutBox}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoToken,
+  InputBox,
+  OutBox
+}
 import txs.Tx
 
 import scala.collection.JavaConverters.seqAsJavaListConverter
@@ -77,7 +83,10 @@ class ProfileBoxCreationTx(
         .decrementProfileToken(profileTokenDistributionBox)
         .getOutBox(ctx, ctx.newTxBuilder()),
       profileBox.getOutBox(ctx, ctx.newTxBuilder()),
-      FundsToAddressBox(address = Address.create(serviceOwner), value = serviceFee).getOutBox(ctx, ctx.newTxBuilder())
+      FundsToAddressBox(
+        address = Address.create(serviceOwner),
+        value = serviceFee
+      ).getOutBox(ctx, ctx.newTxBuilder())
     )
   }
 }

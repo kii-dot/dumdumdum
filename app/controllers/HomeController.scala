@@ -38,13 +38,19 @@ class HomeController @Inject() (
   def getProfile(walletAddress: String): Action[AnyContent] = Action {
     implicit request: Request[AnyContent] =>
       try {
-        val nft: NFT = profile.getProfileNFTDetails(address = Address.create(walletAddress))
-        val followingRegister = profile.getFollowing(Address.create(walletAddress))
+        val nft: NFT =
+          profile.getProfileNFTDetails(address = Address.create(walletAddress))
+        val followingRegister =
+          profile.getFollowing(Address.create(walletAddress))
 
-        Ok(Json.fromFields(List(
-          ("profileNFT", nft.toJson),
-          ("following", followingRegister.toJson)
-        ))).as("application/json")
+        Ok(
+          Json.fromFields(
+            List(
+              ("profileNFT", nft.toJson),
+              ("following", followingRegister.toJson)
+            )
+          )
+        ).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -53,16 +59,19 @@ class HomeController @Inject() (
   def getFeed(walletAddress: String): Action[AnyContent] = Action {
     implicit request: Request[AnyContent] =>
       try {
-        val followingRegister = profile.getFollowing(Address.create(walletAddress))
-        val tweets = followingRegister.collAddress.flatMap(address =>
-          feed.get(address)
-        ).sortBy(tweet => tweet.creationHeight)(Ordering.Long.reverse)
+        val followingRegister =
+          profile.getFollowing(Address.create(walletAddress))
+        val tweets = followingRegister.collAddress
+          .flatMap(address => feed.get(address))
+          .sortBy(tweet => tweet.creationHeight)(Ordering.Long.reverse)
 
-        Ok(Json.fromFields(
-          List(
-            ("tweets", Json.fromValues(tweets.map(tweet => tweet.toJson)))
+        Ok(
+          Json.fromFields(
+            List(
+              ("tweets", Json.fromValues(tweets.map(tweet => tweet.toJson)))
+            )
           )
-        )).as("application/json")
+        ).as("application/json")
       } catch {
         case e: Throwable => exception(e, logger)
       }
@@ -88,7 +97,8 @@ class HomeController @Inject() (
   def getAddressFollowing(walletAddress: String): Action[AnyContent] = Action {
     implicit request: Request[AnyContent] =>
       try {
-        val followingRegister = profile.getFollowing(Address.create(walletAddress))
+        val followingRegister =
+          profile.getFollowing(Address.create(walletAddress))
 
         Ok(
           followingRegister.toJson

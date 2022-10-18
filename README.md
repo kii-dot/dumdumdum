@@ -4,6 +4,13 @@ In conjunction with ErgoHack V: Mining and minting, we decided to work on the ca
 
 Not only that, this dApp will include a profile on chain which “forces” users to use NFTs that they own as their profile picture and allow users to follow other users. These are all done via existing functions or smart contracts. Let’s get started.
 
+## Quick Run Guide (if you have DockerHub)
+
+```shell
+docker pull kiidot/dumdumdum:latest
+docker run -p 9000:9000 kiidot/dumdumdum
+```
+
 ### Vision
 A system that allows users to “own” their voice.
 
@@ -263,8 +270,8 @@ Get Following
 - [x]  Profile Box Design
 - [x]  Profile Box Contracts
 - [x]  Profile Box Backend
-- [ ]  Publish Required Package (Issue with signing on machine. Can't publish.)
-- [ ]  Dockerized App (Need to have above packaged to be published in SONAType to be able to dockerize. However the docker files have been written)
+- [x]  Publish Required Package (Issue with signing on machine. Can't publish.)
+- [x]  Dockerized App (Need to have above packaged to be published in SONAType to be able to dockerize. However the docker files have been written)
 - [ ]  Front end
     - [ ]  Command Prompt App to sign Txs
     

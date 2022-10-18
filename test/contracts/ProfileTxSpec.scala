@@ -20,6 +20,7 @@ import org.ergoplatform.appkit.{
   RestApiErgoClient,
   SecretString
 }
+import org.scalatest.Ignore
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import profile.{ProfileBox, ProfileTokenDistributionBox}
@@ -27,6 +28,8 @@ import txs.Tx
 
 import scala.collection.convert.ImplicitConversions.`iterable AsScalaIterable`
 
+// Ignoring because all tests requires a real wallet
+@Ignore
 class ProfileTxSpec extends AnyWordSpec with Matchers {
   val networkType: NetworkType = NetworkType.MAINNET
 

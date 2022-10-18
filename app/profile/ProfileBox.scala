@@ -2,11 +2,29 @@ package profile
 
 import boxes.{Box, BoxWrapper, BoxWrapperHelper}
 import commons.ErgCommons
-import config.Configs.{dumdumdumsNFT, dumdumdumsProfileToken, serviceFee, serviceOwner}
+import config.Configs.{
+  dumdumdumsNFT,
+  dumdumdumsProfileToken,
+  serviceFee,
+  serviceOwner
+}
 import contracts.{ProfileBoxContract, ProfileTokenDistributionBoxContract}
-import edge.registers.{AddressRegister, CollAddressRegister, CollStringRegister, LongRegister}
+import edge.registers.{
+  AddressRegister,
+  CollAddressRegister,
+  CollStringRegister,
+  LongRegister
+}
 import mint.Client
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoContract, ErgoId, ErgoToken, InputBox, NetworkType}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoContract,
+  ErgoId,
+  ErgoToken,
+  InputBox,
+  NetworkType
+}
 import registers.Register
 import special.collection.Coll
 import tokens.TokenHelper
@@ -64,7 +82,9 @@ object ProfileBox {
           .getValue
           .asInstanceOf[Coll[Coll[Byte]]]
           .toArray
-          .map(collByte => Address.fromPropositionBytes(NetworkType.MAINNET, collByte.toArray))
+          .map(collByte =>
+            Address.fromPropositionBytes(NetworkType.MAINNET, collByte.toArray)
+          )
       ),
       box = Option(Box(inputBox))
     )

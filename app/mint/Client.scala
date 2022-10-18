@@ -8,7 +8,13 @@ import io.circe.Json
 import json.ErgoJson
 import node.{BaseClient, DefaultNodeInfo}
 import org.ergoplatform.ErgoAddressEncoder
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoId, InputBox, NetworkType}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoId,
+  InputBox,
+  NetworkType
+}
 import play.api.libs.json.JsResultException
 import profile.ProfileBox
 
@@ -24,12 +30,14 @@ class TweetExplorer @Inject() (implicit client: Client)
       nodeInfo = DefaultNodeInfo(NetworkType.MAINNET)
     ) {
 
-  def getNFTBox(tokenId: ErgoId): NFT = {
+  def getNFTBox(tokenId: ErgoId): NFT =
     try {
       val boxJson: Json = getBoxById(tokenId.toString)
-      val txId: String = boxJson.hcursor.downField("spentTransactionId").as[String].getOrElse("")
+      val txId: String =
+        boxJson.hcursor.downField("spentTransactionId").as[String].getOrElse("")
       val tx: Json = getConfirmedTx(txId)
-      val outputs: Array[Json] = tx.hcursor.downField("outputs").as[Array[Json]].getOrElse(null)
+      val outputs: Array[Json] =
+        tx.hcursor.downField("outputs").as[Array[Json]].getOrElse(null)
       val nftJson: Json = outputs.head
       val nftBox: NFT = NFT.from(nftJson)
       nftBox
@@ -41,11 +49,17 @@ class TweetExplorer @Inject() (implicit client: Client)
       case e: Throwable =>
         throw e
     }
-  }
 
-  def getProfileBox(address: Address): ProfileBox = {
+  def getProfileBox(address: Address): ProfileBox =
     try {
-      val profileBoxInput = client.getAllUnspentBox(ProfileBoxContract.getContract(address)(client.getContext).contract.address).head
+      val profileBoxInput = client
+        .getAllUnspentBox(
+          ProfileBoxContract
+            .getContract(address)(client.getContext)
+            .contract
+            .address
+        )
+        .head
       ProfileBox.from(profileBoxInput)
     } catch {
       case e: ParseException => {
@@ -55,7 +69,6 @@ class TweetExplorer @Inject() (implicit client: Client)
       case e: Throwable =>
         throw e
     }
-  }
 
   def getProfileTokenDistributionInputBox: InputBox =
     client.getClient.execute { (ctx: BlockchainContext) =>

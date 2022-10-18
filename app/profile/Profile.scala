@@ -7,7 +7,17 @@ import edge.registers.CollAddressRegister
 import io.circe.Json
 import mint.{Client, CreateIssuerBoxTx, NFT, TweetExplorer}
 import org.ergoplatform.P2PKAddress
-import org.ergoplatform.appkit.{Address, BlockchainContext, Eip4Token, ErgoContract, ErgoId, ErgoToken, InputBox, OutBox, ReducedTransaction}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  Eip4Token,
+  ErgoContract,
+  ErgoId,
+  ErgoToken,
+  InputBox,
+  OutBox,
+  ReducedTransaction
+}
 import registers.Register
 import txs.Tx
 
@@ -134,7 +144,13 @@ class Profile @Inject() (client: Client, explorer: TweetExplorer) {
   }
 
   def getFollowing(address: Address): CollAddressRegister = {
-    val profileInputBox: InputBox = client.getAllUnspentBox(ProfileBoxContract.getContract(address)(client.getContext).contract.address)
+    val profileInputBox: InputBox = client
+      .getAllUnspentBox(
+        ProfileBoxContract
+          .getContract(address)(client.getContext)
+          .contract
+          .address
+      )
       .head
 
     val profileBox: ProfileBox = ProfileBox.from(profileInputBox)
