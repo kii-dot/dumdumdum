@@ -13,6 +13,8 @@ docker run -p 9000:9000 kiidot/dumdumdum
 ```
 Currently, this server only exposes the API routes. You can run all the routes stated in [API Routes](https://github.com/kii-dot/dumdumdum#api-routes) with the required parameters and receive an ergopay response. This ergopay response has the reduced tx bytes. So... if you have the skills to write a quick app and sign the reduced tx bytes, you'll be able to mint your tweets!
 
+## Documentation Starts
+
 ### Vision
 A system that allows users to “own” their voice.
 
