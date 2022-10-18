@@ -1,4 +1,4 @@
-name := """ergo-twitter"""
+name := """dumdumdum"""
 organization := "com.example"
 
 version := "1.0-SNAPSHOT"
