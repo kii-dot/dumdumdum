@@ -16,7 +16,6 @@ import org.ergoplatform.appkit.{
   InputBox,
   NetworkType,
   OutBox,
-  Parameters,
   RestApiErgoClient,
   SecretString
 }

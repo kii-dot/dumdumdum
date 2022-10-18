@@ -4,12 +4,13 @@ import boxes.FundsToAddressBox
 import commons.ErgCommons
 import config.Configs.{dumdumdumsProfileToken, serviceFee, serviceOwner}
 import contracts.ProfileBoxContract
-import edge.registers.{AddressRegister, CollAddressRegister}
+import edge.registers.{AddressRegister, CollAddressRegister, CollStringRegister}
 import mint.{Client, TweetExplorer}
 import org.ergoplatform.P2PKAddress
 import org.ergoplatform.appkit.{
   Address,
   BlockchainContext,
+  ErgoId,
   ErgoToken,
   InputBox,
   OutBox
@@ -154,7 +155,7 @@ class ProfileBoxIssuerBoxTx(
         ctx
           .newTxBuilder()
           .outBoxBuilder()
-          .value(txFee)
+          .value(ErgCommons.MinMinerFee * 2)
           .contract(userAddress.toErgoContract)
           .registers(new AddressRegister(userAddress).toErgoValue.get)
           .build()
@@ -303,7 +304,8 @@ class DeleteProfileBoxTx(
         address = userAddress,
         value = ErgCommons.MinBoxFee,
         tokens = Seq(profileBox.tokens(1)),
-        R4 = profileBox.R4
+        R4 = profileBox.R4,
+        R5 = Option(CollStringRegister.empty)
       ).getOutBox(ctx, ctx.newTxBuilder())
     )
 }
